@@ -11,6 +11,13 @@
     "ios": {
       "supportsTablet": true
     },
+    "android": {
+      "package": "com.kamala.postpartum",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/kamala.png",
+        "backgroundColor": "#F4DDE3"
+      }
+    },
     "web": {
       "bundler": "metro",
       "output": "single",

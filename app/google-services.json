@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "202092173655",
+    "project_id": "kamala-2bb8d",
+    "storage_bucket": "kamala-2bb8d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:202092173655:android:f432c6cff4a9fed9410612",
+        "android_client_info": {
+          "package_name": "com.kamala.postpartum"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-65C5c3IVDhfcf2uDnZhz2u7OLesHaKs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
