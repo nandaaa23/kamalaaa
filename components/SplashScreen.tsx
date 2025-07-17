@@ -1,43 +1,37 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
   withDelay,
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
+import WaveImage from '../assets/images/wave.png'; // Ensure correct path
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
-  const waveHeight = useSharedValue(height * 0.7);
+  const waveTranslateY = useSharedValue(0); // Start at bottom
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Animate title appearance
-    titleOpacity.value = withDelay(500, withTiming(1, { duration: 1000 }));
-    
-    // Animate subtitle appearance
-    subtitleOpacity.value = withDelay(1000, withTiming(1, { duration: 1000 }));
-    
-    // After 4 seconds, animate waves upward
+    // Fade in title and subtitle
+    titleOpacity.value = withDelay(500, withTiming(1, { duration: 800 }));
+    subtitleOpacity.value = withDelay(1200, withTiming(1, { duration: 800 }));
+
+    // Move wave upwards to cover full screen
     setTimeout(() => {
-      waveHeight.value = withTiming(-height * 0.3, { duration: 1500 });
-      setTimeout(onComplete, 1500);
+      waveTranslateY.value = withTiming(height + height / 3, { duration: 1500 });
+      setTimeout(onComplete, 1600);
     }, 4000);
   }, []);
-
-  const waveStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: waveHeight.value }],
-  }));
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -45,6 +39,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
 
   const subtitleStyle = useAnimatedStyle(() => ({
     opacity: subtitleOpacity.value,
+  }));
+
+  const waveStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: waveTranslateY.value }],
   }));
 
   return (
@@ -61,12 +59,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             For mothers, postpartum.
           </Animated.Text>
         </View>
-        
-        <Animated.View style={[styles.waveContainer, waveStyle]}>
-          <LinearGradient
-            colors={[Colors.mistyRose, Colors.pinkLavender1]}
-            style={styles.wave}
-          />
+
+        {/* Wave image at bottom */}
+        <Animated.View style={[styles.waveWrapper, waveStyle]}>
+          <Image source={WaveImage} style={styles.waveImage} resizeMode="cover" />
         </Animated.View>
       </LinearGradient>
     </View>
@@ -99,16 +95,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
   },
-  waveContainer: {
+  waveWrapper: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: height * 0.4,
+    height: height / 3, // Show 1/3rd initially
+    zIndex: 10,
   },
-  wave: {
-    flex: 1,
-    borderTopLeftRadius: 60,
-    borderTopRightRadius: 60,
+  waveImage: {
+    width: '100%',
+    height: '100%',
   },
 });

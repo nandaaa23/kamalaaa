@@ -1,24 +1,27 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import {
+  View, Text, StyleSheet, SafeAreaView,
+  TextInput, TouchableOpacity, ScrollView,
+} from 'react-native';
 import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
-import { useData } from '../contexts/DataContext';
+import { reframeThought } from '../services/reframeThought';
 
-export const MindShiftScreen: React.FC = () => {
+export const MindShiftScreen = () => {
   const [thought, setThought] = useState('');
-  const [reframes, setReframes] = useState<string[]>([]);
+  const [response, setResponse] = useState({ reframe: '' });
   const [isLoading, setIsLoading] = useState(false);
-  const { reframeThought } = useData();
 
   const handleReframe = async () => {
     if (!thought.trim()) return;
-    
+
     setIsLoading(true);
     try {
-      const newReframes = await reframeThought(thought);
-      setReframes(newReframes);
+      const result = await reframeThought(thought);
+      setResponse(result);
     } catch (error) {
       console.error('Error reframing thought:', error);
+      setResponse({ reframe: 'Something went wrong. Please try again.' });
     } finally {
       setIsLoading(false);
     }
@@ -26,7 +29,7 @@ export const MindShiftScreen: React.FC = () => {
 
   const handleTryAgain = () => {
     setThought('');
-    setReframes([]);
+    setResponse({ reframe: '' });
   };
 
   return (
@@ -53,24 +56,20 @@ export const MindShiftScreen: React.FC = () => {
           />
         </View>
 
-        {reframes.length > 0 && (
+        {response.reframe && (
           <View style={styles.reframesSection}>
             <Text style={styles.originalThought}>
               You said: "{thought}"
             </Text>
-            
-            <View style={styles.reframes}>
-              {reframes.map((reframe, index) => (
-                <View key={index} style={styles.reframeCard}>
-                  <Text style={styles.reframeText}>{reframe}</Text>
-                </View>
-              ))}
+
+            <View style={styles.reframeCard}>
+              <Text style={styles.reframeText}>{response.reframe}</Text>
             </View>
           </View>
         )}
 
         <View style={styles.buttons}>
-          {reframes.length === 0 ? (
+          {!response.reframe ? (
             <TouchableOpacity
               style={[styles.button, styles.primaryButton]}
               onPress={handleReframe}
@@ -157,9 +156,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     fontStyle: 'italic',
   },
-  reframes: {
-    gap: 12,
-  },
   reframeCard: {
     backgroundColor: Colors.mintCream,
     padding: 16,
@@ -174,6 +170,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.jet,
     lineHeight: 24,
+    fontWeight: '500',
+    fontStyle: 'italic',
   },
   buttons: {
     marginTop: 20,
