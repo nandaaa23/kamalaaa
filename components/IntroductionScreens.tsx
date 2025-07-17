@@ -66,11 +66,11 @@ export const IntroductionScreens: React.FC<IntroductionScreensProps> = ({ onComp
       >
         <View style={styles.content}>
           <Text style={styles.logo}>Kamala.</Text>
-          
+
           <View style={styles.slidesContainer}>
             <Animated.View style={[styles.slides, animatedStyle]}>
               {slides.map((slide, index) => (
-                <View key={index} style={styles.slide}>
+                <View key={index} style={[styles.slide]}>
                   <Text style={styles.slideText}>{slide.text}</Text>
                 </View>
               ))}
@@ -111,7 +111,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
   },
   logo: {
     fontSize: 48,
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
   },
   slidesContainer: {
     height: 200,
-    width: width - 80,
+    width: width,
     overflow: 'hidden',
     marginBottom: 40,
   },
@@ -130,9 +129,10 @@ const styles = StyleSheet.create({
     width: width * 3,
   },
   slide: {
-    width: width - 80,
+    width: width,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 32,
   },
   slideText: {
     fontSize: 18,
