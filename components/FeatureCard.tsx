@@ -1,15 +1,16 @@
+// components/FeatureCard.tsx
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Colors } from '../constants/Colors';
+import { TouchableOpacity, View, Text, StyleSheet, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface FeatureCardProps {
   title: string;
   description: string;
   icon: string;
   color: string;
-  onPress: () => void;
   isLocked?: boolean;
-  screen?: string;
+  screen: string;
+  onPress: () => void;
 }
 
 export const FeatureCard: React.FC<FeatureCardProps> = ({
@@ -17,69 +18,94 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
   description,
   icon,
   color,
-  onPress,
   isLocked = false,
   screen,
+  onPress,
 }) => {
   return (
-    <TouchableOpacity
-      style={[styles.card, { backgroundColor: color }]}
+    <Pressable
       onPress={onPress}
-      disabled={isLocked}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: color },
+        pressed && styles.pressed,
+        isLocked && styles.lockedCard,
+      ]}
     >
-      <View style={styles.content}>
+      <View style={styles.iconContainer}>
         <Text style={styles.icon}>{icon}</Text>
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.description}>{description}</Text>
-        </View>
         {isLocked && (
-          <View style={styles.lockIcon}>
-            <Text style={styles.lockText}>🔒</Text>
+          <View style={styles.lockContainer}>
+            <Ionicons name="lock-closed" size={16} color="#666" />
           </View>
         )}
       </View>
-    </TouchableOpacity>
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.description}>{description}</Text>
+      </View>
+      <Ionicons 
+        name="chevron-forward" 
+        size={20} 
+        color={isLocked ? '#999' : '#333'} 
+      />
+    </Pressable>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  content: {
     flexDirection: 'row',
     alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  lockedCard: {
+    opacity: 0.7,
+  },
+  iconContainer: {
+    width: 50,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+    position: 'relative',
   },
   icon: {
-    fontSize: 32,
-    marginRight: 16,
+    fontSize: 30,
+  },
+  lockContainer: {
+    position: 'absolute',
+    bottom: -5,
+    right: -5,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 2,
   },
   textContainer: {
     flex: 1,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '600',
-    color: Colors.jet,
+    color: '#333',
     marginBottom: 4,
   },
   description: {
     fontSize: 14,
-    color: Colors.textSecondary,
-    lineHeight: 20,
-  },
-  lockIcon: {
-    marginLeft: 12,
-  },
-  lockText: {
-    fontSize: 20,
+    color: '#666',
   },
 });

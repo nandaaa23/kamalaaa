@@ -1,3 +1,5 @@
+
+
 export interface User {
   id: string;
   name: string;
@@ -5,6 +7,7 @@ export interface User {
   isGuest: boolean;
   onboardingComplete: boolean;
   profile?: UserProfile;
+  role: 'mother' | 'psychologist';
 }
 
 export interface UserProfile {
@@ -13,6 +16,7 @@ export interface UserProfile {
   interests: string[];
   language: string;
   displayName: string;
+  role?: 'mother' | 'psychologist';
 }
 
 export interface MoodEntry {

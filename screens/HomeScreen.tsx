@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, Alert, TouchableOpacity } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../contexts/AuthContext';
@@ -21,8 +21,8 @@ const HomeScreen: React.FC = () => {
       title: 'Chat with Kamala',
       description: 'Your AI companion for support',
       icon: '💬',
-      color: '#E8B4CB', // Kamala's signature color
-      screen: '/chat',
+      color: '#E8B4CB',
+      screen: '/chat', // This should work as it's in app/chat.tsx
       isLocked: false,
     },
     {
@@ -30,7 +30,7 @@ const HomeScreen: React.FC = () => {
       description: 'Check in with your emotions daily',
       icon: '💭',
       color: Colors.lightCyan,
-      screen: 'MoodLogScreen',
+      screen: '/MoodLogScreen', // This is in app/MoodLogScreen.tsx
       isLocked: false,
     },
     {
@@ -38,7 +38,7 @@ const HomeScreen: React.FC = () => {
       description: 'A private space for your thoughts',
       icon: '📝',
       color: Colors.mistyRose,
-      screen: 'ReflectionsScreen',
+      screen: '/ReflectionsScreen', // This is in app/ReflectionsScreen.tsx
       isLocked: user?.isGuest,
     },
     {
@@ -46,7 +46,7 @@ const HomeScreen: React.FC = () => {
       description: 'Share anonymously with others',
       icon: '🌸',
       color: Colors.pinkLavender1,
-      screen: 'SecretCircleScreen',
+      screen: '/SecretCircleScreen', // This is in app/SecretCircleScreen.tsx
       isLocked: user?.isGuest,
     },
     {
@@ -54,7 +54,7 @@ const HomeScreen: React.FC = () => {
       description: 'Gentle practices for calm',
       icon: '🫧',
       color: Colors.mintGreen,
-      screen: 'BreatheAndBeScreen',
+      screen: '/BreatheAndBeScreen', // This is in app/BreatheAndBeScreen.tsx
       isLocked: false,
     },
     {
@@ -62,7 +62,7 @@ const HomeScreen: React.FC = () => {
       description: 'Resources for recovery',
       icon: '🌱',
       color: Colors.honeydew,
-      screen: 'LearnAndHealScreen',
+      screen: '/LearnAndHealScreen', // This is in app/LearnAndHealScreen.tsx
       isLocked: user?.isGuest,
     },
     {
@@ -70,32 +70,84 @@ const HomeScreen: React.FC = () => {
       description: 'Podcasts and stories',
       icon: '🎧',
       color: Colors.linen,
-      screen: 'ListenInScreen',
+      screen: '/ListenInScreen', // This is in app/ListenInScreen.tsx
       isLocked: user?.isGuest,
     },
   ];
 
   const handleFeaturePress = (feature: any) => {
+    console.log('🎯 Feature pressed:', feature.title, feature.screen);
+    
     if (feature.isLocked) {
-      console.log('Show join prompt');
-    } else {
-      router.push(feature.screen);
+      Alert.alert(
+        'Premium Feature',
+        'This feature is available for registered users. Would you like to create an account?',
+        [
+          {
+            text: 'Not Now',
+            style: 'cancel',
+          },
+          {
+            text: 'Sign Up',
+            onPress: () => {
+              console.log('Navigate to signup');
+            },
+          },
+        ],
+      );
+      return;
+    }
+
+    // Navigate to the feature screen
+    try {
+      console.log('🚀 Attempting navigation to:', feature.screen);
+      
+      // Check if the screen exists in the app folder
+      const screens = [
+        '/chat',
+        '/MoodLogScreen', 
+        '/ReflectionsScreen',
+        '/SecretCircleScreen',
+        '/BreatheAndBeScreen',
+        '/LearnAndHealScreen',
+        '/ListenInScreen'
+      ];
+      
+      if (screens.includes(feature.screen)) {
+        router.push(feature.screen);
+        console.log('✅ Navigation executed');
+      } else {
+        console.error('❌ Screen not found:', feature.screen);
+        Alert.alert('Coming Soon', `${feature.title} will be available soon!`);
+      }
+    } catch (error) {
+      console.error('❌ Navigation error:', error);
+      Alert.alert(
+        'Navigation Error', 
+        `Unable to open ${feature.title}. Error: ${(error as Error)?.message || 'Unknown error'}`
+      );
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.greeting}>
-            {getGreeting()}, {user?.profile?.displayName || 'friend'}.
+            {getGreeting()}, {user?.profile?.displayName || user?.name || 'friend'}.
           </Text>
           <Text style={styles.subGreeting}>How are you feeling today?</Text>
           <Text style={styles.description}>
             This space is yours to check in, rest, and reconnect.
           </Text>
+          
+      
         </View>
-
+        
         <View style={styles.features}>
           {features.map((feature, index) => (
             <FeatureCard
@@ -118,35 +170,42 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.background || '#FFFFFF',
   },
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   header: {
     padding: 20,
-    paddingTop: 60,
+    paddingTop: 40,
     alignItems: 'center',
   },
   greeting: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.jet,
+    color: Colors.jet || '#000000',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subGreeting: {
     fontSize: 18,
-    color: Colors.textSecondary,
+    color: Colors.textSecondary || '#666666',
     marginBottom: 12,
+    textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    color: Colors.textSecondary,
+    color: Colors.textSecondary || '#666666',
     lineHeight: 24,
+    textAlign: 'center',
+    paddingHorizontal: 20,
   },
   features: {
     padding: 20,
-    paddingTop: 0,
+    paddingTop: 10,
   },
 });
 

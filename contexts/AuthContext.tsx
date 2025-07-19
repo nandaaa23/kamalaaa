@@ -1,3 +1,4 @@
+// 5. Fixed AuthContext.tsx - Update the role types
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserProfile } from '../types';
@@ -14,6 +15,7 @@ interface AuthContextType {
   enterGuestMode: () => void;
   updateProfile: (profile: UserProfile) => Promise<void>;
   completeOnboarding: () => Promise<void>;
+  setUserWithRole: (userData: any, role: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,7 +31,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: '202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com',
     androidClientId: '202092173655-tkca4lpftb83klgu037uitietr9cauqg.apps.googleusercontent.com',
     webClientId: '202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com',
   });
@@ -86,12 +87,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Invalid user info from Google');
       }
 
+      // Get selected role from storage
+      const selectedRole = await AsyncStorage.getItem('selected_role');
+
       const newUser: User = {
         id: userInfo.id,
         name: userInfo.name,
         email: userInfo.email,
+        role: (selectedRole as 'mother' | 'psychologist') || 'mother', // Fixed type assertion
         isGuest: false,
-        onboardingComplete: false,
+        onboardingComplete: selectedRole === 'psychologist', // Psychologists skip onboarding
       };
 
       setUser(newUser);
@@ -104,21 +109,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     try {
       await AsyncStorage.removeItem('user');
+      await AsyncStorage.removeItem('selected_role');
+      await AsyncStorage.removeItem('intro_complete');
       setUser(null);
     } catch (error) {
       console.error('Sign out error:', error);
     }
   };
 
-  const enterGuestMode = () => {
+  const enterGuestMode = async () => {
+    const selectedRole = await AsyncStorage.getItem('selected_role');
     const guestUser: User = {
       id: 'guest',
       name: 'Guest',
       email: '',
+      role: (selectedRole as 'mother' | 'psychologist') || 'mother', // Fixed type assertion
       isGuest: true,
       onboardingComplete: true,
     };
     setUser(guestUser);
+    await saveUserToStorage(guestUser);
   };
 
   const updateProfile = async (profile: UserProfile) => {
@@ -137,6 +147,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await saveUserToStorage(updatedUser);
   };
 
+  const setUserWithRole = async (userData: any, role: string) => {
+    const newUser: User = {
+      id: userData.uid || userData.id,
+      name: userData.displayName || userData.name || 'User',
+      email: userData.email,
+      role: role as 'mother' | 'psychologist', // Fixed type assertion
+      isGuest: false,
+      onboardingComplete: role === 'psychologist', // Psychologists skip onboarding
+    };
+    
+    setUser(newUser);
+    await saveUserToStorage(newUser);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -147,6 +171,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         enterGuestMode,
         updateProfile,
         completeOnboarding,
+        setUserWithRole,
       }}
     >
       {children}
