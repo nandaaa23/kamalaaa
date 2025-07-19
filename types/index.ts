@@ -69,3 +69,10 @@ export interface ForumReply {
   authorType: 'user' | 'psychologist';
   timestamp: number;
 }
+
+// types.ts
+export type RootStackParamList = {
+  HomeScreen: undefined;
+  ChatbotScreen: undefined;
+  // Add more screens as needed
+};

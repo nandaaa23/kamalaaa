@@ -5,10 +5,10 @@ import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
 
-export const HomeScreen: React.FC = () => {
+const HomeScreen: React.FC = () => {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return 'Good morning';
@@ -17,6 +17,14 @@ export const HomeScreen: React.FC = () => {
   };
 
   const features = [
+    {
+      title: 'Chat with Kamala',
+      description: 'Your AI companion for support',
+      icon: '💬',
+      color: '#E8B4CB', // Kamala's signature color
+      screen: '/chat',
+      isLocked: false,
+    },
     {
       title: 'Mood Log',
       description: 'Check in with your emotions daily',
@@ -69,13 +77,12 @@ export const HomeScreen: React.FC = () => {
 
   const handleFeaturePress = (feature: any) => {
     if (feature.isLocked) {
-      // Show join prompt - in a real app, this would show a modal
       console.log('Show join prompt');
     } else {
-      // Navigate to feature screen
-      router.push(`/${feature.screen}`);
+      router.push(feature.screen);
     }
   };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView}>
@@ -83,9 +90,7 @@ export const HomeScreen: React.FC = () => {
           <Text style={styles.greeting}>
             {getGreeting()}, {user?.profile?.displayName || 'friend'}.
           </Text>
-          <Text style={styles.subGreeting}>
-            How are you feeling today?
-          </Text>
+          <Text style={styles.subGreeting}>How are you feeling today?</Text>
           <Text style={styles.description}>
             This space is yours to check in, rest, and reconnect.
           </Text>
@@ -121,7 +126,7 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     paddingTop: 60,
-    alignItems : 'centre',
+    alignItems: 'center',
   },
   greeting: {
     fontSize: 24,
@@ -144,3 +149,5 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
 });
+
+export default HomeScreen;

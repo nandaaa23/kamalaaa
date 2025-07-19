@@ -1,6 +1,26 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MoodEntry, Reflection, Secret, HeartbeatMoment, ForumPost } from '../types';
+import {
+  MoodEntry,
+  Reflection,
+  Secret,
+  HeartbeatMoment,
+  ForumPost,
+} from '../types';
+
+// ✅ NEW Podcast type
+type Podcast = {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+};
 
 interface DataContextType {
   moodEntries: MoodEntry[];
@@ -8,6 +28,7 @@ interface DataContextType {
   secrets: Secret[];
   heartbeatMoments: HeartbeatMoment[];
   forumPosts: ForumPost[];
+  podcasts: Podcast[]; // ✅ Added podcast here
   addMoodEntry: (entry: Omit<MoodEntry, 'id'>) => Promise<void>;
   addReflection: (reflection: Omit<Reflection, 'id'>) => Promise<void>;
   addSecret: (secret: Omit<Secret, 'id'>) => Promise<void>;
@@ -33,6 +54,22 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [secrets, setSecrets] = useState<Secret[]>([]);
   const [heartbeatMoments, setHeartbeatMoments] = useState<HeartbeatMoment[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
+
+  // ✅ Add podcast state with dummy data
+  const [podcasts] = useState<Podcast[]>([
+    {
+      id: '1',
+      title: 'Healing After Birth',
+      description: 'A mother’s journey through emotional recovery.',
+      url: 'https://open.spotify.com/episode/xyz1',
+    },
+    {
+      id: '2',
+      title: 'Mental Health & Motherhood',
+      description: 'Discussing postpartum wellness and self-care.',
+      url: 'https://open.spotify.com/episode/xyz2',
+    },
+  ]);
 
   useEffect(() => {
     loadData();
@@ -73,11 +110,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addSecret = async (secret: Omit<Secret, 'id'>) => {
-    const newSecret = { 
-      ...secret, 
+    const newSecret = {
+      ...secret,
       id: Date.now().toString(),
       replies: [],
-      timestamp: Date.now() 
+      timestamp: Date.now(),
     };
     const updatedSecrets = [...secrets, newSecret];
     setSecrets(updatedSecrets);
@@ -92,11 +129,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addForumPost = async (post: Omit<ForumPost, 'id'>) => {
-    const newPost = { 
-      ...post, 
+    const newPost = {
+      ...post,
       id: Date.now().toString(),
       replies: [],
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
     const updatedPosts = [...forumPosts, newPost];
     setForumPosts(updatedPosts);
@@ -106,32 +143,31 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const getMoodStreak = () => {
     const today = new Date();
     let streak = 0;
-    
+
     for (let i = 0; i < 30; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - i);
       const dateStr = checkDate.toISOString().split('T')[0];
-      
-      const hasEntry = moodEntries.some(entry => entry.date === dateStr);
+
+      const hasEntry = moodEntries.some((entry) => entry.date === dateStr);
       if (hasEntry) {
         streak++;
       } else if (i === 0) {
         break;
       }
     }
-    
+
     return streak;
   };
 
   const reframeThought = async (thought: string): Promise<string[]> => {
-    // Mock AI reframing - in production, this would call an AI service
     const reframes = [
       "You're not failing — you're feeling your way through something hard.",
       "This moment is temporary, but your strength is lasting.",
       "You're learning to be gentle with yourself, and that's brave.",
     ];
-    
-    return new Promise(resolve => {
+
+    return new Promise((resolve) => {
       setTimeout(() => {
         resolve(reframes.slice(0, 2));
       }, 1000);
@@ -146,6 +182,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         secrets,
         heartbeatMoments,
         forumPosts,
+        podcasts, // ✅ Now provided
         addMoodEntry,
         addReflection,
         addSecret,

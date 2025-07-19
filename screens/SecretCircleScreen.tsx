@@ -37,23 +37,24 @@ export const SecretCircleScreen: React.FC = () => {
 
   const handleShareSecret = async () => {
     if (!secretText.trim()) return;
-
-    await addSecret({
-      content: secretText,
-      allowReplies,
+  
+    addSecret({
+      content: secretText,          // ✅ use the correct value
+      allowReplies: allowReplies,
+      replies: [],                  // start with no replies
+      timestamp: Date.now(),        // ✅ use number instead of Date object
     });
-
-    // Floating animation
+  
     floatAnimation.value = withSequence(
       withTiming(-50, { duration: 1000 }),
       withTiming(0, { duration: 0 })
     );
-
+  
     Alert.alert('Shared', 'Thank you for trusting Kamala. You\'re not alone.');
     setSecretText('');
     setActiveTab('read');
   };
-
+  
   const handleReply = (secretId: string) => {
     if (!replyText.trim()) return;
     
@@ -68,8 +69,8 @@ export const SecretCircleScreen: React.FC = () => {
   }));
 
   const tabs = [
-    { key: 'read', label: 'Read Secrets', icon: '👁️' },
-    { key: 'share', label: 'Share Secret', icon: '✍️' },
+    { key: 'read', label: 'Read Secrets', icon: '👁' },
+    { key: 'share', label: 'Share Secret', icon: '✍' },
     { key: 'my-replies', label: 'My Replies', icon: '📩' },
   ];
 

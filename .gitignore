@@ -1,6 +1,15 @@
 # dependencies
 node_modules/
-
+ __pycache__/ /
+ *
+ .pyc
+ .env
+ .env
+ venv
+ venv/ /
+ .DS_Store
+ .DS_Store
+ 
 
 
 # expo
