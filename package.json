@@ -11,7 +11,12 @@
     "ios": "expo run:ios"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.1",
+    "@expo-google-fonts/merriweather": "^0.4.1",
+    "@expo-google-fonts/nunito": "^0.4.1",
+    "@expo-google-fonts/poppins": "^0.4.0",
     "@expo/vector-icons": "^14.1.0",
+    "@livekit/react-native": "^2.7.6",
     "@lucide/lab": "^0.1.2",
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native-google-signin/google-signin": "^15.0.0",
@@ -41,9 +46,11 @@
     "lottie-react-native": "7.2.2",
     "lucide-react-native": "^0.475.0",
     "moti": "^0.30.0",
+    "nativewind": "^4.1.23",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
+    "react-native-agora": "^4.5.3",
     "react-native-dotenv": "^3.4.11",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
@@ -53,7 +60,10 @@
     "react-native-url-polyfill": "^2.0.0",
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "^0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webrtc": "^124.0.5",
+    "react-native-webview": "13.13.5",
+    "socket.io-client": "^4.8.1",
+    "tailwindcss": "^4.1.11"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

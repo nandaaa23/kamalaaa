@@ -10,8 +10,8 @@ export const RoleSelectorScreen: React.FC<RoleSelectorScreenProps> = ({ onSelect
   const [selectedRole, setSelectedRole] = useState<'mother' | 'psychologist' | null>(null);
 
   const handleSelect = (role: 'mother' | 'psychologist') => {
-    setSelectedRole(role); // updates visual state
-    onSelectRole(role); // passes it back to layout
+    setSelectedRole(role); 
+    onSelectRole(role); 
   };
 
   return (

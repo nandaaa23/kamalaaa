@@ -1,4 +1,4 @@
-import { LearnAndHealScreen } from '@/screens/LearnAndHealScreen';
+import { LearnAndHealScreen } from '../screens/LearnAndHealScreen';
 
 export default function LearnAndHeal() {
   return <LearnAndHealScreen />;

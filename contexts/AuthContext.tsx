@@ -1,4 +1,3 @@
-// 5. Fixed AuthContext.tsx - Update the role types
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User, UserProfile } from '../types';
@@ -87,16 +86,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw new Error('Invalid user info from Google');
       }
 
-      // Get selected role from storage
       const selectedRole = await AsyncStorage.getItem('selected_role');
 
       const newUser: User = {
         id: userInfo.id,
         name: userInfo.name,
         email: userInfo.email,
-        role: (selectedRole as 'mother' | 'psychologist') || 'mother', // Fixed type assertion
+        role: (selectedRole as 'mother' | 'psychologist') || 'mother', 
         isGuest: false,
-        onboardingComplete: selectedRole === 'psychologist', // Psychologists skip onboarding
+        onboardingComplete: selectedRole === 'psychologist', 
       };
 
       setUser(newUser);
@@ -123,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       id: 'guest',
       name: 'Guest',
       email: '',
-      role: (selectedRole as 'mother' | 'psychologist') || 'mother', // Fixed type assertion
+      role: (selectedRole as 'mother' | 'psychologist') || 'mother', 
       isGuest: true,
       onboardingComplete: true,
     };
@@ -152,9 +150,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       id: userData.uid || userData.id,
       name: userData.displayName || userData.name || 'User',
       email: userData.email,
-      role: role as 'mother' | 'psychologist', // Fixed type assertion
+      role: role as 'mother' | 'psychologist', 
       isGuest: false,
-      onboardingComplete: role === 'psychologist', // Psychologists skip onboarding
+      onboardingComplete: role === 'psychologist', 
     };
     
     setUser(newUser);

@@ -22,7 +22,7 @@ const HomeScreen: React.FC = () => {
       description: 'Your AI companion for support',
       icon: '💬',
       color: '#E8B4CB',
-      screen: '/chat', // This should work as it's in app/chat.tsx
+      screen: '/chat', 
       isLocked: false,
     },
     {
@@ -30,7 +30,7 @@ const HomeScreen: React.FC = () => {
       description: 'Check in with your emotions daily',
       icon: '💭',
       color: Colors.lightCyan,
-      screen: '/MoodLogScreen', // This is in app/MoodLogScreen.tsx
+      screen: '/MoodLogScreen',
       isLocked: false,
     },
     {
@@ -38,7 +38,7 @@ const HomeScreen: React.FC = () => {
       description: 'A private space for your thoughts',
       icon: '📝',
       color: Colors.mistyRose,
-      screen: '/ReflectionsScreen', // This is in app/ReflectionsScreen.tsx
+      screen: '/ReflectionsScreen', 
       isLocked: user?.isGuest,
     },
     {
@@ -46,7 +46,7 @@ const HomeScreen: React.FC = () => {
       description: 'Share anonymously with others',
       icon: '🌸',
       color: Colors.pinkLavender1,
-      screen: '/SecretCircleScreen', // This is in app/SecretCircleScreen.tsx
+      screen: '/SecretCircleScreen', 
       isLocked: user?.isGuest,
     },
     {
@@ -54,7 +54,7 @@ const HomeScreen: React.FC = () => {
       description: 'Gentle practices for calm',
       icon: '🫧',
       color: Colors.mintGreen,
-      screen: '/BreatheAndBeScreen', // This is in app/BreatheAndBeScreen.tsx
+      screen: '/BreatheAndBeScreen', 
       isLocked: false,
     },
     {
@@ -62,7 +62,7 @@ const HomeScreen: React.FC = () => {
       description: 'Resources for recovery',
       icon: '🌱',
       color: Colors.honeydew,
-      screen: '/LearnAndHealScreen', // This is in app/LearnAndHealScreen.tsx
+      screen: '/LearnAndHealScreen', 
       isLocked: user?.isGuest,
     },
     {
@@ -70,7 +70,7 @@ const HomeScreen: React.FC = () => {
       description: 'Podcasts and stories',
       icon: '🎧',
       color: Colors.linen,
-      screen: '/ListenInScreen', // This is in app/ListenInScreen.tsx
+      screen: '/ListenInScreen', 
       isLocked: user?.isGuest,
     },
   ];
@@ -98,11 +98,11 @@ const HomeScreen: React.FC = () => {
       return;
     }
 
-    // Navigate to the feature screen
+  
     try {
       console.log('🚀 Attempting navigation to:', feature.screen);
       
-      // Check if the screen exists in the app folder
+      
       const screens = [
         '/chat',
         '/MoodLogScreen', 

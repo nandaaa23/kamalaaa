@@ -39,10 +39,10 @@ export const SecretCircleScreen: React.FC = () => {
     if (!secretText.trim()) return;
   
     addSecret({
-      content: secretText,          // ✅ use the correct value
+      content: secretText,          
       allowReplies: allowReplies,
-      replies: [],                  // start with no replies
-      timestamp: Date.now(),        // ✅ use number instead of Date object
+      replies: [],                 
+      timestamp: Date.now(),        
     });
   
     floatAnimation.value = withSequence(
@@ -58,7 +58,6 @@ export const SecretCircleScreen: React.FC = () => {
   const handleReply = (secretId: string) => {
     if (!replyText.trim()) return;
     
-    // In a real app, this would add the reply to the secret
     Alert.alert('Reply Sent', 'Your supportive words have been shared.');
     setReplyText('');
     setReplyingTo(null);

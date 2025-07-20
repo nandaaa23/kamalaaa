@@ -1,5 +1,4 @@
-// Fixed app/_layout.tsx - Robust navigation with proper routing
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, Text, ActivityIndicator } from 'react-native';
@@ -30,24 +29,24 @@ function AppContent() {
   const [appState, setAppState] = useState<AppState>('loading');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isReady, setIsReady] = useState(false);
+  const [forceReinit, setForceReinit] = useState(0);
   const initRef = useRef(false);
+  const hasInitiallyNavigated = useRef(false);
   const router = useRouter();
   const segments = useSegments();
   const navigationState = useRootNavigationState();
 
   useFrameworkReady();
 
-  // Initialize app
   useEffect(() => {
-    if (initRef.current) return;
-    initRef.current = true;
+    initRef.current = false;
+    hasInitiallyNavigated.current = false;
 
     const initApp = async () => {
       try {
         console.log('🔍 Initializing app...');
 
-        // For testing - uncomment to reset
-        await AsyncStorage.clear();
+         await AsyncStorage.clear();
 
         const [userData, introDone, role] = await Promise.all([
           AsyncStorage.getItem('user'),
@@ -61,7 +60,6 @@ function AppContent() {
           role
         });
 
-        // Determine initial state
         if (userData) {
           const user: User = JSON.parse(userData);
           setCurrentUser(user);
@@ -87,48 +85,28 @@ function AppContent() {
       }
     };
 
-    // Show splash first
     setAppState('splash');
     setTimeout(initApp, 1500);
-  }, []);
+  }, [forceReinit]);
 
-  // Handle navigation when ready
   useEffect(() => {
-    if (!isReady || !currentUser || !navigationState?.key) return;
+    if (!isReady || !currentUser || !navigationState?.key || hasInitiallyNavigated.current) return;
 
-    console.log('🚀 Navigation state ready, current segments:', segments);
-
-    // Only redirect if we're at the root or in an invalid state
     const currentPath = segments.join('/');
-    const isInMotherTabs = currentPath.includes('(tabs)');
-    const isInPsychTabs = currentPath.includes('(tabsp)');
-    
-    // Check if we're in any valid route
-    const validRoutes = [
-      'chat',
-      'MoodLogScreen',
-      'ReflectionsScreen',
-      'SecretCircleScreen',
-      'BreatheAndBeScreen',
-      'LearnAndHealScreen',
-      'ListenInScreen'
-    ];
-    
-    const isInValidRoute = isInMotherTabs || 
-                          isInPsychTabs || 
-                          validRoutes.some(route => currentPath.includes(route));
+    console.log('🚀 Initial navigation check, segments:', segments, 'path:', currentPath);
 
-    // Only navigate if we're not already in a valid route
-    if (!isInValidRoute && currentPath !== '') {
+    hasInitiallyNavigated.current = true;
+
+    if (currentPath === '') {
       if (currentUser.role === 'psychologist') {
-        console.log('👩‍⚕️ Navigating psychologist to messages');
+        console.log('👩‍⚕ Initial navigation: psychologist to messages');
         router.replace('/(tabsp)/messages');
       } else if (currentUser.role === 'mother') {
-        console.log('👩‍👧‍👦 Navigating mother to dashboard');
+        console.log('👩‍👧‍👦 Initial navigation: mother to dashboard');
         router.replace('/(tabs)');
       }
     }
-  }, [isReady, currentUser, segments, navigationState, router]);
+  }, [isReady, currentUser, navigationState?.key]);
 
   const handleSplashComplete = () => {
     console.log('💫 Splash completed');
@@ -188,15 +166,33 @@ function AppContent() {
     setIsReady(true);
   };
 
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const userData = await AsyncStorage.getItem('user');
+      if (!userData && appState === 'ready') {
+        console.log('🚪 User logged out, resetting app...');
+        setAppState('loading');
+        setCurrentUser(null);
+        setIsReady(false);
+        hasInitiallyNavigated.current = false;
+        setForceReinit(prev => prev + 1); 
+      }
+    };
+
+    const interval = setInterval(checkAuthStatus, 1000);
+    
+    return () => clearInterval(interval);
+  }, [appState]);
+
   console.log('🎬 App state:', {
     appState,
     isReady,
     user: currentUser?.name || 'none',
     role: currentUser?.role || 'none',
-    segments: segments.join('/')
+    segments: segments.join('/'),
+    hasInitiallyNavigated: hasInitiallyNavigated.current
   });
 
-  // Render based on state
   if (appState === 'loading') {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -225,7 +221,6 @@ function AppContent() {
     return <OnboardingScreen onComplete={handleOnboardingComplete} />;
   }
 
-  // Main app navigation
   return (
     <>
       <Stack screenOptions={{ headerShown: false }}>

@@ -1,5 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, Dimensions } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+  Modal,
+  Pressable,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -7,545 +17,692 @@ import Animated, {
   withRepeat,
   withSequence,
   interpolate,
+  Easing,
+  FadeIn,
+  FadeOut,
+  withDelay,
 } from 'react-native-reanimated';
-import { Colors } from '../constants/Colors';
-import { BackButton } from '../components/BackButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useData } from '../contexts/DataContext';
+import { BackButton } from '../components/BackButton';
 
 const { width, height } = Dimensions.get('window');
 
+const AFFIRMATIONS = [
+  "Feel your heartbeat... you are present, and so is your baby.",
+  "You are connected. You are whole.",
+  "Your love is enough — just as you are.",
+  "Close your eyes. Breathe in. Let love and rest settle into your body.",
+  "Your heartbeat grounds you. Your baby feels your calm.",
+  "There is strength in stillness. You are doing beautifully.",
+];
+
 export const HeartbeatEchoScreen: React.FC = () => {
-  const [phase, setPhase] = useState<'baby' | 'mother' | 'preview' | 'moments'>('baby');
-  const [babyHeartbeat, setBabyHeartbeat] = useState<number[]>([]);
-  const [motherHeartbeat, setMotherHeartbeat] = useState<number[]>([]);
-  const [isRecording, setIsRecording] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(10);
+  const [phase, setPhase] = useState<'baby' | 'mother' | 'visualization' | 'end'>('baby');
+  const [tapCount, setTapCount] = useState(0);
+  const [tapTimestamps, setTapTimestamps] = useState<number[]>([]);
+  const [babyInterval, setBabyInterval] = useState(600);
+  const [motherInterval, setMotherInterval] = useState(1000);
+  const [currentAffirmation, setCurrentAffirmation] = useState(0);
+  const [showSessions, setShowSessions] = useState(false);
+  
   const { addHeartbeatMoment, heartbeatMoments } = useData();
+  
+  // Animation values
+  const motherScale = useSharedValue(1);
+  const babyScale = useSharedValue(1);
+  const motherHaloOpacity = useSharedValue(0);
+  const babyHaloOpacity = useSharedValue(0);
+  const contentOpacity = useSharedValue(1);
+  const affirmationOpacity = useSharedValue(0);
+  
+  const affirmationTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const babyPulse = useSharedValue(1);
-  const motherPulse = useSharedValue(1);
-  const rippleScale = useSharedValue(0);
-  const timerRef = useRef<NodeJS.Timeout>();
-  const recordingRef = useRef<NodeJS.Timeout>();
+  useEffect(() => {
+    if (phase === 'visualization') {
+      startVisualization();
+      startAffirmationCycle();
+    }
+    
+    return () => {
+      if (affirmationTimer.current) {
+        clearInterval(affirmationTimer.current);
+      }
+    };
+  }, [phase]);
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setTimeLeft(10);
-    
-    const currentHeartbeat = phase === 'baby' ? babyHeartbeat : motherHeartbeat;
-    const setHeartbeat = phase === 'baby' ? setBabyHeartbeat : setMotherHeartbeat;
-    
-    // Clear previous recording
-    setHeartbeat([]);
-    
-    // Start countdown
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          stopRecording();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  const handleTap = () => {
+    const now = Date.now();
+    const newTimestamps = [...tapTimestamps, now];
+    setTapTimestamps(newTimestamps);
+    setTapCount(tapCount + 1);
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-    
-    if (phase === 'baby') {
-      setPhase('mother');
-    } else {
-      setPhase('preview');
-      startPreview();
+    // Pulse animation on tap
+    const pulseValue = phase === 'baby' ? babyScale : motherScale;
+    pulseValue.value = withSequence(
+      withTiming(1.2, { duration: 150 }),
+      withTiming(1, { duration: 150 })
+    );
+
+    if (tapCount === 3) {
+      // Calculate average interval
+      const intervals = [];
+      for (let i = 1; i < newTimestamps.length; i++) {
+        intervals.push(newTimestamps[i] - newTimestamps[i - 1]);
+      }
+      const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+      if (phase === 'baby') {
+        setBabyInterval(avgInterval);
+        setTimeout(() => {
+          setPhase('mother');
+          setTapCount(0);
+          setTapTimestamps([]);
+        }, 1000);
+      } else {
+        setMotherInterval(avgInterval);
+        setTimeout(() => {
+          setPhase('visualization');
+        }, 1000);
+      }
     }
   };
 
-  const handleTap = () => {
-    if (!isRecording) return;
-    
-    const timestamp = Date.now();
-    const currentHeartbeat = phase === 'baby' ? babyHeartbeat : motherHeartbeat;
-    const setHeartbeat = phase === 'baby' ? setBabyHeartbeat : setMotherHeartbeat;
-    
-    setHeartbeat([...currentHeartbeat, timestamp]);
-    
-    // Trigger ripple animation
-    rippleScale.value = withSequence(
-      withTiming(1, { duration: 300 }),
-      withTiming(0, { duration: 300 })
-    );
-  };
-
-  const startPreview = () => {
-    // Calculate intervals for animation
-    const babyIntervals = babyHeartbeat.length > 1 
-      ? babyHeartbeat.slice(1).map((beat, i) => beat - babyHeartbeat[i])
-      : [800]; // Default interval
-    
-    const motherIntervals = motherHeartbeat.length > 1
-      ? motherHeartbeat.slice(1).map((beat, i) => beat - motherHeartbeat[i])
-      : [1000]; // Default interval
-
-    const avgBabyInterval = babyIntervals.reduce((a, b) => a + b, 0) / babyIntervals.length;
-    const avgMotherInterval = motherIntervals.reduce((a, b) => a + b, 0) / motherIntervals.length;
-
-    // Start pulsing animations
-    babyPulse.value = withRepeat(
+  const startVisualization = () => {
+    // Start heartbeat animations
+    motherScale.value = withRepeat(
       withSequence(
-        withTiming(1.3, { duration: avgBabyInterval / 2 }),
-        withTiming(1, { duration: avgBabyInterval / 2 })
+        withTiming(1.1, { duration: motherInterval * 0.3, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: motherInterval * 0.7, easing: Easing.inOut(Easing.ease) })
       ),
       -1
     );
 
-    motherPulse.value = withRepeat(
+    babyScale.value = withRepeat(
       withSequence(
-        withTiming(1.2, { duration: avgMotherInterval / 2 }),
-        withTiming(1, { duration: avgMotherInterval / 2 })
+        withTiming(1.15, { duration: babyInterval * 0.3, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: babyInterval * 0.7, easing: Easing.inOut(Easing.ease) })
       ),
       -1
     );
+
+    // Halo animations
+    motherHaloOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: motherInterval * 0.3 }),
+        withTiming(0, { duration: motherInterval * 0.7 })
+      ),
+      -1
+    );
+
+    babyHaloOpacity.value = withRepeat(
+      withSequence(
+        withTiming(0.7, { duration: babyInterval * 0.3 }),
+        withTiming(0, { duration: babyInterval * 0.7 })
+      ),
+      -1
+    );
+
+    // End visualization after 30 seconds
+    setTimeout(() => {
+      setPhase('end');
+    }, 30000);
   };
 
-  const saveHeartbeatMoment = async () => {
+  const startAffirmationCycle = () => {
+    affirmationOpacity.value = withTiming(1, { duration: 1000 });
+    
+    affirmationTimer.current = setInterval(() => {
+      affirmationOpacity.value = withSequence(
+        withTiming(0, { duration: 500 }),
+        withDelay(200, withTiming(1, { duration: 500 }))
+      );
+      
+      setTimeout(() => {
+        setCurrentAffirmation((prev) => (prev + 1) % AFFIRMATIONS.length);
+      }, 500);
+    }, 5000);
+  };
+
+  const saveSession = async () => {
+    //const title = Heartbeat Echo - ${new Date().toLocaleDateString()};
     const title = `Heartbeat Echo - ${new Date().toLocaleDateString()}`;
     await addHeartbeatMoment({
-      date: new Date().toISOString().split('T')[0],
-      babyHeartbeat,
-      motherHeartbeat,
+      date: new Date().toISOString(),
+      babyHeartbeat: tapTimestamps, // Using the correct property name
+      motherHeartbeat: tapTimestamps, // Using the correct property name
       title,
     });
     
-    Alert.alert('Saved', 'Your echo is saved to My Moments.');
+    // Show confirmation with animation
+    contentOpacity.value = withSequence(
+      withTiming(0.5, { duration: 200 }),
+      withTiming(1, { duration: 200 })
+    );
   };
 
-  const babyAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: babyPulse.value }],
+  // Animated styles
+  const motherOrbStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: motherScale.value }],
   }));
 
-  const motherAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: motherPulse.value }],
+  const babyOrbStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: babyScale.value }],
   }));
 
-  const rippleAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: rippleScale.value }],
-    opacity: interpolate(rippleScale.value, [0, 1], [0.8, 0]),
+  const motherHaloStyle = useAnimatedStyle(() => ({
+    opacity: motherHaloOpacity.value,
+    transform: [{ scale: interpolate(motherHaloOpacity.value, [0, 0.6], [1, 1.5]) }],
   }));
 
-  if (phase === 'moments') {
+  const babyHaloStyle = useAnimatedStyle(() => ({
+    opacity: babyHaloOpacity.value,
+    transform: [{ scale: interpolate(babyHaloOpacity.value, [0, 0.7], [1, 1.4]) }],
+  }));
+
+  const affirmationStyle = useAnimatedStyle(() => ({
+    opacity: affirmationOpacity.value,
+  }));
+
+  const contentStyle = useAnimatedStyle(() => ({
+    opacity: contentOpacity.value,
+  }));
+
+  if (phase === 'visualization') {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setPhase('preview')}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-          <Text style={styles.title}>My Moments</Text>
-        </View>
-
-        <View style={styles.momentsContainer}>
-          {heartbeatMoments.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No heartbeat moments saved yet. Create your first echo!
-            </Text>
-          ) : (
-            heartbeatMoments.map((moment) => (
-              <TouchableOpacity key={moment.id} style={styles.momentCard}>
-                <View style={styles.momentPreview}>
-                  <View style={styles.miniOrb} />
-                  <View style={[styles.miniOrb, styles.motherOrb]} />
-                </View>
-                <View style={styles.momentInfo}>
-                  <Text style={styles.momentTitle}>{moment.title}</Text>
-                  <Text style={styles.momentDate}>{moment.date}</Text>
-                </View>
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  if (phase === 'preview') {
-    return (
-      <SafeAreaView style={[styles.container, styles.previewContainer]}>
-        <BackButton />
-        <View style={styles.previewHeader}>
-          <Text style={styles.previewTitle}>Your Heartbeat Echo</Text>
-          <Text style={styles.previewSubtitle}>
-            Together in every heartbeat — your bond shines.
-          </Text>
-        </View>
-
-        <View style={styles.orbContainer}>
-          <Animated.View style={[styles.babyOrb, babyAnimatedStyle]}>
-            <Text style={styles.orbLabel}>Baby</Text>
-          </Animated.View>
-          
-          <Animated.View style={[styles.motherOrb, motherAnimatedStyle]}>
-            <Text style={styles.orbLabel}>You</Text>
-          </Animated.View>
-        </View>
-
-        <View style={styles.affirmationContainer}>
-          <Text style={styles.affirmation}>
-            You're doing beautifully — both of you.
-          </Text>
-        </View>
-
-        <View style={styles.previewActions}>
-          <TouchableOpacity
-            style={styles.momentsButton}
-            onPress={() => setPhase('moments')}
-          >
-            <Text style={styles.momentsButtonText}>View My Moments</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity
-            style={styles.saveButton}
-            onPress={saveHeartbeatMoment}
-          >
-            <Text style={styles.saveButtonText}>Save This Echo</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <BackButton />
-      <View style={styles.header}>
-        <Text style={styles.title}>Echo Our Heartbeats</Text>
-        <Text style={styles.subtitle}>
-          Feel your rhythm. Feel your bond.
-        </Text>
-      </View>
-
-      <View style={styles.phaseIndicator}>
-        <Text style={styles.phaseText}>
-          {phase === 'baby' ? "Step 1: Baby's Rhythm" : "Step 2: Your Rhythm"}
-        </Text>
-        <Text style={styles.phaseDescription}>
-          {phase === 'baby' 
-            ? "Tap to mimic your baby's heartbeat" 
-            : "Tap to match your own heartbeat"
-          }
-        </Text>
-      </View>
-
-      <View style={styles.recordingArea}>
-        <TouchableOpacity
-          style={[
-            styles.tapArea,
-            { backgroundColor: phase === 'baby' ? Colors.mistyRose : Colors.lightCyan }
-          ]}
-          onPress={handleTap}
-          disabled={!isRecording}
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f3460']}
+          style={styles.gradient}
         >
-          <Animated.View style={[styles.ripple, rippleAnimatedStyle]} />
-          <Text style={styles.tapInstruction}>
-            {isRecording ? 'TAP TO RHYTHM' : 'GET READY'}
-          </Text>
-          {isRecording && (
-            <Text style={styles.timer}>{timeLeft}s</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          <SafeAreaView style={styles.visualizationContainer}>
+            <Animated.View style={[styles.orbsContainer, contentStyle]}>
+              {/* Mother's orb with halo */}
+              <View style={styles.motherOrbContainer}>
+                <Animated.View style={[styles.motherHalo, motherHaloStyle]} />
+                <Animated.View style={[styles.motherOrb, motherOrbStyle]}>
+                  <LinearGradient
+                    colors={['#4ECDC4', '#44A08D']}
+                    style={styles.orbGradient}
+                  />
+                </Animated.View>
+              </View>
 
-      <View style={styles.controls}>
-        {!isRecording ? (
-          <TouchableOpacity
-            style={styles.startButton}
-            onPress={startRecording}
+              {/* Baby's orb with halo - centered within mother's */}
+              <View style={styles.babyOrbContainer}>
+                <Animated.View style={[styles.babyHalo, babyHaloStyle]} />
+                <Animated.View style={[styles.babyOrb, babyOrbStyle]}>
+                  <LinearGradient
+                    colors={['#FFB6C1', '#FF69B4']}
+                    style={styles.orbGradient}
+                  />
+                </Animated.View>
+              </View>
+            </Animated.View>
+
+            <Animated.View style={[styles.affirmationContainer, affirmationStyle]}>
+              <Text style={styles.affirmationText}>
+                {AFFIRMATIONS[currentAffirmation]}
+              </Text>
+            </Animated.View>
+          </SafeAreaView>
+        </LinearGradient>
+      </View>
+    );
+  }
+
+  if (phase === 'end') {
+    return (
+      <View style={styles.container}>
+        <LinearGradient
+          colors={['#1a1a2e', '#16213e', '#0f3460']}
+          style={styles.gradient}
+        >
+          <SafeAreaView style={styles.endContainer}>
+            <Animated.View 
+              entering={FadeIn.duration(1000)}
+              style={styles.endContent}
+            >
+              <Text style={styles.endTitle}>This moment is yours.</Text>
+              <Text style={styles.endSubtitle}>
+                You can return to it anytime.
+              </Text>
+
+              <View style={styles.endActions}>
+                <TouchableOpacity
+                  style={styles.saveButton}
+                  onPress={saveSession}
+                >
+                  <Text style={styles.saveIcon}>💾</Text>
+                  <Text style={styles.saveButtonText}>Save this Session</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.viewButton}
+                  onPress={() => setShowSessions(true)}
+                >
+                  <Text style={styles.viewIcon}>📖</Text>
+                  <Text style={styles.viewButtonText}>View Past Sessions</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.newSessionButton}
+                onPress={() => {
+                  setPhase('baby');
+                  setTapCount(0);
+                  setTapTimestamps([]);
+                }}
+              >
+                <Text style={styles.newSessionText}>Start New Session</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </SafeAreaView>
+        </LinearGradient>
+
+        <Modal
+          visible={showSessions}
+          animationType="slide"
+          transparent={true}
+        >
+          <View style={styles.modalContainer}>
+            <BlurView intensity={80} style={styles.modalBlur}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Past Sessions</Text>
+                <ScrollView style={styles.sessionsList}>
+                  {heartbeatMoments.map((moment) => (
+                    <View key={moment.id} style={styles.sessionCard}>
+                      <View style={styles.sessionPreview}>
+                        <View style={styles.miniMotherOrb} />
+                        <View style={styles.miniBabyOrb} />
+                      </View>
+                      <View style={styles.sessionInfo}>
+                        <Text style={styles.sessionTitle}>{moment.title}</Text>
+                        <Text style={styles.sessionDate}>
+                          {new Date(moment.date).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setShowSessions(false)}
+                >
+                  <Text style={styles.closeButtonText}>Close</Text>
+                </TouchableOpacity>
+              </View>
+            </BlurView>
+          </View>
+        </Modal>
+      </View>
+    );
+  }
+
+  // Calibration phases
+  return (
+    <View style={styles.container}>
+      <LinearGradient
+        colors={['#2C3E50', '#3498DB', '#5DADE2']}
+        style={styles.gradient}
+      >
+        <SafeAreaView style={styles.calibrationContainer}>
+          <BackButton  />
+          
+          <Animated.View 
+            entering={FadeIn.duration(800)}
+            style={styles.calibrationContent}
           >
-            <Text style={styles.startButtonText}>
-              {phase === 'baby' ? 'Start Recording Baby' : 'Start Recording You'}
+            <Text style={styles.calibrationTitle}>
+              {phase === 'baby' ? "Baby's Rhythm" : "Your Rhythm"}
             </Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            style={styles.stopButton}
-            onPress={stopRecording}
-          >
-            <Text style={styles.stopButtonText}>Stop Recording</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+            
+            <Text style={styles.calibrationInstructions}>
+              {phase === 'baby' 
+                ? "Let's begin by tuning into your baby's rhythm.\n\nSoftly tap the screen in sync with how you imagine your baby's heartbeat might feel — light, quick, full of life.\n\nTap four times whenever you're ready."
+                : "Now place your hand gently on your heart. Breathe slowly.\n\nTap the screen four times in rhythm with your own heartbeat — steady, grounding, present."
+              }
+            </Text>
 
-      <Text style={styles.microcopy}>
-        Every beat tells a story.
-      </Text>
-    </SafeAreaView>
+            <Pressable
+              style={styles.tapZone}
+              onPress={handleTap}
+            >
+              <Animated.View style={phase === 'baby' ? babyOrbStyle : motherOrbStyle}>
+                <LinearGradient
+                  colors={phase === 'baby' ? ['#FFB6C1', '#FF69B4'] : ['#4ECDC4', '#44A08D']}
+                  style={styles.tapCircle}
+                >
+                  <Text style={styles.tapCount}>{tapCount}/4</Text>
+                </LinearGradient>
+              </Animated.View>
+              <Text style={styles.tapHint}>Tap here</Text>
+            </Pressable>
+
+            <View style={styles.progressDots}>
+              {[0, 1, 2, 3].map((i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.progressDot,
+                    i < tapCount && styles.progressDotActive
+                  ]}
+                />
+              ))}
+            </View>
+          </Animated.View>
+        </SafeAreaView>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
   },
-  previewContainer: {
-    backgroundColor: Colors.mintCream,
+  gradient: {
+    flex: 1,
   },
-  header: {
+  calibrationContainer: {
+    flex: 1,
     padding: 20,
-    paddingTop: 60,
-    alignItems: 'center',
   },
-  backButton: {
-    position: 'absolute',
-    left: 20,
-    top: 60,
-    padding: 8,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: Colors.jet,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.jet,
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-  },
-  phaseIndicator: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  phaseText: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: Colors.jet,
-    marginBottom: 8,
-  },
-  phaseDescription: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  recordingArea: {
+  calibrationContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
   },
-  tapArea: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: width * 0.35,
+  calibrationTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 30,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  calibrationInstructions: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 28,
+    marginHorizontal: 20,
+    marginBottom: 50,
+    opacity: 0.95,
+  },
+  tapZone: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+  tapCircle: {
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+    elevation: 15,
+  },
+  tapCount: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  tapHint: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    marginTop: 20,
+    opacity: 0.7,
+  },
+  progressDots: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  progressDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  progressDotActive: {
+    backgroundColor: '#FFFFFF',
+  },
+  visualizationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  orbsContainer: {
+    width: width,
+    height: width,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
   },
-  ripple: {
+  motherOrbContainer: {
     position: 'absolute',
-    width: width * 0.8,
-    height: width * 0.8,
-    borderRadius: width * 0.4,
-    backgroundColor: Colors.primary,
-  },
-  tapInstruction: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: Colors.jet,
-    marginBottom: 8,
-  },
-  timer: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.jet,
-  },
-  controls: {
-    padding: 20,
-  },
-  startButton: {
-    backgroundColor: Colors.primary,
-    padding: 16,
-    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  startButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.jet,
+  motherOrb: {
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    overflow: 'hidden',
+    shadowColor: '#4ECDC4',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
+    elevation: 20,
   },
-  stopButton: {
-    backgroundColor: '#FF6B6B',
-    padding: 16,
-    borderRadius: 16,
+  motherHalo: {
+    position: 'absolute',
+    width: 300,
+    height: 300,
+    borderRadius: 150,
+    backgroundColor: '#4ECDC4',
+    opacity: 0.3,
+  },
+  babyOrbContainer: {
+    position: 'absolute',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  stopButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.surface,
-  },
-  microcopy: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    paddingBottom: 20,
-  },
-  previewHeader: {
-    padding: 20,
-    paddingTop: 60,
-    alignItems: 'center',
-  },
-  previewTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.jet,
-    marginBottom: 8,
-  },
-  previewSubtitle: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-  orbContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingHorizontal: 40,
   },
   babyOrb: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: Colors.mistyRose,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+    overflow: 'hidden',
+    shadowColor: '#FFB6C1',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 25,
   },
-  motherOrb: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: Colors.lightCyan,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
+  babyHalo: {
+    position: 'absolute',
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: '#FFB6C1',
+    opacity: 0.3,
   },
-  orbLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.jet,
+  orbGradient: {
+    flex: 1,
   },
   affirmationContainer: {
-    padding: 20,
-    alignItems: 'center',
+    position: 'absolute',
+    bottom: 100,
+    paddingHorizontal: 40,
   },
-  affirmation: {
-    fontSize: 18,
-    color: Colors.jet,
+  affirmationText: {
+    fontSize: 22,
+    color: '#FFFFFF',
     textAlign: 'center',
+    lineHeight: 32,
     fontStyle: 'italic',
-    lineHeight: 26,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
-  previewActions: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 12,
-  },
-  momentsButton: {
+  endContainer: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    padding: 16,
-    borderRadius: 16,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: Colors.border,
+    padding: 20,
   },
-  momentsButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.textSecondary,
+  endContent: {
+    alignItems: 'center',
+  },
+  endTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 15,
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+  },
+  endSubtitle: {
+    fontSize: 20,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 50,
+    opacity: 0.9,
+  },
+  endActions: {
+    gap: 20,
+    marginBottom: 40,
   },
   saveButton: {
-    flex: 1,
-    backgroundColor: Colors.primary,
-    padding: 16,
-    borderRadius: 16,
+    flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 30,
+    paddingVertical: 18,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    gap: 12,
+  },
+  saveIcon: {
+    fontSize: 24,
   },
   saveButtonText: {
-    fontSize: 16,
+    fontSize: 18,
+    color: '#FFFFFF',
     fontWeight: '600',
-    color: Colors.jet,
   },
-  momentsContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    fontStyle: 'italic',
-    marginTop: 100,
-  },
-  momentCard: {
+  viewButton: {
     flexDirection: 'row',
-    backgroundColor: Colors.surface,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 30,
+    paddingVertical: 18,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+    gap: 12,
+  },
+  viewIcon: {
+    fontSize: 24,
+  },
+  viewButtonText: {
+    fontSize: 18,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  newSessionButton: {
+    marginTop: 20,
+  },
+  newSessionText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.8,
+    textDecorationLine: 'underline',
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalBlur: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 24,
+    padding: 24,
+    width: width * 0.9,
+    maxHeight: height * 0.7,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1a1a2e',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  sessionsList: {
+    maxHeight: height * 0.5,
+  },
+  sessionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.05)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
-    alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
   },
-  momentPreview: {
+  sessionPreview: {
     flexDirection: 'row',
     marginRight: 16,
   },
-  miniOrb: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.mistyRose,
-    marginRight: 8,
+  miniMotherOrb: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#4ECDC4',
+    marginRight: -10,
   },
-  momentInfo: {
+  miniBabyOrb: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: '#FFB6C1',
+  },
+  sessionInfo: {
     flex: 1,
   },
-  momentTitle: {
+  sessionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.jet,
+    color: '#1a1a2e',
     marginBottom: 4,
   },
-  momentDate: {
+  sessionDate: {
     fontSize: 14,
-    color: Colors.textSecondary,
+    color: '#666',
+  },
+  closeButton: {
+    backgroundColor: '#1a1a2e',
+    borderRadius: 20,
+    paddingHorizontal: 30,
+    paddingVertical: 12,
+    marginTop: 20,
+    alignSelf: 'center',
+  },
+  closeButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

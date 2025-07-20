@@ -1,4 +1,4 @@
-import { MindShiftScreen } from '@/screens/MindShiftScreen';
+import { MindShiftScreen } from '../screens/MindShiftScreen';
 
 export default function MindShift() {
   return <MindShiftScreen />;

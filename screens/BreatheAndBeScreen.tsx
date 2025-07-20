@@ -46,7 +46,8 @@ export const BreatheAndBeScreen: React.FC = () => {
           <TouchableOpacity
             key={index}
             style={[styles.exerciseCard, { backgroundColor: exercise.color }]}
-            onPress={() => router.push(`/${exercise.screen}`)}
+            onPress={() => router.push(`/${exercise.screen}` as any)}
+
           >
             <Text style={styles.exerciseIcon}>{exercise.icon}</Text>
             <View style={styles.exerciseContent}>

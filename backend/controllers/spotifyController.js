@@ -1,4 +1,3 @@
-// controllers/spotifyController.js
 import axios from 'axios';
 import { getSpotifyToken } from '../utils/getSpotifyToken.js';
 

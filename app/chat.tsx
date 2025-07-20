@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -32,8 +31,7 @@ export default function ChatScreen() {
   const [sessionId, setSessionId] = useState('');
   const router = useRouter();
 
-  // Update this to your actual IP address
-  const API_BASE_URL = 'http://192.168.1.3:5000';
+  const API_BASE_URL = 'http://192.168.1.2:5000';
 
   useEffect(() => {
     initializeSession();
@@ -41,7 +39,7 @@ export default function ChatScreen() {
 
   const initializeSession = async () => {
     try {
-      // Generate or retrieve session ID
+      
       let storedSessionId = await AsyncStorage.getItem('chatSessionId');
       if (!storedSessionId) {
         storedSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -49,7 +47,6 @@ export default function ChatScreen() {
       }
       setSessionId(storedSessionId);
 
-      // Add welcome message
       const welcomeMessage: Message = {
         id: 'welcome_' + Date.now(),
         text: 'Hello! I am Kamala, your compassionate companion. I am here to support you through your postpartum journey. Feel free to share what is on your mind in any language you are comfortable with.',
@@ -109,7 +106,6 @@ export default function ChatScreen() {
 
         setMessages(prev => [...prev, botMessage]);
 
-        // Show alert for emergency situations
         if (data.is_emergency) {
           Alert.alert(
             'Emergency Support',
@@ -124,7 +120,6 @@ export default function ChatScreen() {
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Show user-friendly error message
       const errorMessage: Message = {
         id: 'error_' + Date.now(),
         text: `I am having trouble connecting right now. Please make sure your backend is running on ${API_BASE_URL}. You can also try restarting the app.`,
@@ -168,7 +163,6 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Messages */}
         <ScrollView 
           style={styles.messagesContainer}
           showsVerticalScrollIndicator={false}
@@ -211,7 +205,7 @@ export default function ChatScreen() {
           )}
         </ScrollView>
 
-        {/* Input */}
+        
         <View style={styles.inputContainer}>
           <TextInput
             style={styles.textInput}

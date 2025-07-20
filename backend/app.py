@@ -1,4 +1,3 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
@@ -9,12 +8,11 @@ from datetime import datetime
 import re
 import logging
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React Native
+CORS(app)  
 
 class PostpartumSupportChatbot:
     def __init__(self, api_key: str):
@@ -37,7 +35,6 @@ class PostpartumSupportChatbot:
             'english': 'English'
         }
         
-        # Store conversations per session
         self.conversations = {}
         
         self.emergency_keywords = {
@@ -160,7 +157,6 @@ Respond with warmth and helpful guidance IN {language_name} LANGUAGE."""
             if is_emergency:
                 emergency_response = self.get_emergency_response(detected_lang)
                 
-                # Store in session history
                 if session_id not in self.conversations:
                     self.conversations[session_id] = []
                 
@@ -183,7 +179,6 @@ Respond with warmth and helpful guidance IN {language_name} LANGUAGE."""
                     'session_id': session_id
                 }
             
-            # Create supportive system prompt
             system_prompt = self.create_system_prompt(detected_lang, user_input, is_emergency)
             
             if user_name:
@@ -191,10 +186,8 @@ Respond with warmth and helpful guidance IN {language_name} LANGUAGE."""
             else:
                 personalized_prompt = system_prompt
             
-            # Generate response
             response = self.model.generate_content(personalized_prompt)
             
-            # Store in session history
             if session_id not in self.conversations:
                 self.conversations[session_id] = []
             
@@ -228,7 +221,6 @@ Respond with warmth and helpful guidance IN {language_name} LANGUAGE."""
                 'is_emergency': False
             }
 
-# Initialize chatbot
 API_KEY = os.getenv('GOOGLE_AI_API_KEY', 'YOUR_API_KEY_HERE')
 chatbot = PostpartumSupportChatbot(API_KEY)
 
@@ -258,7 +250,6 @@ def chat():
                 'error': 'Message is required'
             }), 400
         
-        # Get response from chatbot
         result = chatbot.get_response(user_input, session_id, user_name)
         
         return jsonify(result)

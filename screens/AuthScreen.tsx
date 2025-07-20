@@ -1,6 +1,3 @@
-// ========================================
-// screens/AuthScreen.tsx - Complete file
-// ========================================
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,32 +17,34 @@ interface User {
   createdAt?: string;
 }
 
-// Login Modal Component
 const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
   visible: boolean;
   onClose: () => void;
   onRegister: () => void;
-  onSuccess: () => void;
+  onSuccess: (userData: { name: string; email: string }) => void;
 }) => {
+  const [name, setName] = useState(''); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setIsLoading(true);
     
-    // Simulate login for now (replace with real Firebase auth later)
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success!', 'Login successful!', [
+      Alert.alert('Success!', `Welcome back, ${name.trim()}!`, [
         { text: 'OK', onPress: () => {
           onClose();
-          onSuccess();
+          onSuccess({
+            name: name.trim(),
+            email: email.trim()
+          });
         }}
       ]);
     }, 1000);
@@ -62,6 +61,15 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
         </View>
 
         <View style={styles.modalContent}>
+          <TextInput
+            style={styles.input}
+            placeholder="Your Name"
+            value={name}
+            onChangeText={setName}
+            editable={!isLoading}
+            autoCapitalize="words"
+          />
+
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -100,19 +108,19 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
   );
 };
 
-// Register Modal Component
 const RegisterModal = ({ visible, onClose, onLogin }: {
   visible: boolean;
   onClose: () => void;
   onLogin: () => void;
 }) => {
+  const [name, setName] = useState(''); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
+    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
@@ -129,13 +137,13 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
 
     setIsLoading(true);
     
-    // Simulate registration (replace with real Firebase auth later)
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success!', 'Account created successfully! Please login with your credentials.', [
+      Alert.alert('Success!', `Account created for ${name.trim()}! Please login with your credentials.`, [
         {
           text: 'OK',
           onPress: () => {
+            setName('');
             setEmail('');
             setPassword('');
             setConfirmPassword('');
@@ -158,6 +166,15 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
         </View>
 
         <View style={styles.modalContent}>
+          <TextInput
+            style={styles.input}
+            placeholder="Your Name"
+            value={name}
+            onChangeText={setName}
+            editable={!isLoading}
+            autoCapitalize="words"
+          />
+
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -205,7 +222,6 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
   );
 };
 
-// Main AuthScreen Component
 const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
@@ -225,7 +241,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
   const handleExplore = async () => {
     console.log('👀 Explore button pressed - entering guest mode');
     
-    // Set guest user in storage
     const selectedRole = await AsyncStorage.getItem('selected_role');
     const guestUser: User = {
       id: 'guest',
@@ -242,7 +257,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
     await AsyncStorage.setItem('user', JSON.stringify(guestUser));
     console.log('💾 Guest user saved to AsyncStorage');
     
-    // Call onComplete to trigger navigation
     if (onComplete) {
       onComplete(guestUser);
     }
@@ -258,18 +272,17 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
     setShowLogin(true);
   };
 
-  const handleAuthSuccess = async () => {
+  const handleAuthSuccess = async (userData: { name: string; email: string }) => {
     console.log('🎉 Authentication successful');
     
-    // Create authenticated user
     const selectedRole = await AsyncStorage.getItem('selected_role');
     const authUser: User = {
       id: 'auth_user_' + Date.now(),
-      name: 'Authenticated User',
-      email: 'user@example.com',
+      name: userData.name, 
+      email: userData.email, 
       role: (selectedRole as 'mother' | 'psychologist') || 'mother',
       isGuest: false,
-      onboardingComplete: selectedRole === 'psychologist', // Psychologists skip onboarding
+      onboardingComplete: selectedRole === 'psychologist', 
       profile: selectedRole === 'psychologist' ? {} : undefined,
       createdAt: new Date().toISOString()
     };
@@ -278,11 +291,9 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
     await AsyncStorage.setItem('user', JSON.stringify(authUser));
     console.log('💾 User saved to AsyncStorage');
     
-    // Close modals
     setShowLogin(false);
     setShowRegister(false);
     
-    // Call onComplete to trigger navigation
     if (onComplete) {
       onComplete(authUser);
     }
@@ -324,7 +335,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
         </View>
       </View>
 
-      {/* Login Modal */}
       <LoginModal 
         visible={showLogin} 
         onClose={() => setShowLogin(false)}
@@ -332,7 +342,6 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
         onSuccess={handleAuthSuccess}
       />
 
-      {/* Register Modal */}
       <RegisterModal 
         visible={showRegister} 
         onClose={() => setShowRegister(false)}
@@ -401,7 +410,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#718096',
   },
-  // Modal styles
+  
   modalContainer: {
     flex: 1,
     backgroundColor: '#fff',

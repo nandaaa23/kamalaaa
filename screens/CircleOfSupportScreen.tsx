@@ -1,356 +1,539 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import io from 'socket.io-client';
 import { Colors } from '../constants/Colors';
-import { BackButton } from '../components/BackButton';
-import { useAuth } from '../contexts/AuthContext';
 
-export const CircleOfSupportScreen: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'groups'>('chat');
-  const { user } = useAuth();
+const socket = io('http://192.168.1.2:3000');
 
-  const mockChats = [
-    {
-      id: '1',
-      name: 'Sarah M.',
-      lastMessage: 'Thank you for sharing your story...',
-      time: '2m ago',
-      isOnline: true,
-    },
-    {
-      id: '2',
-      name: 'Priya K.',
-      lastMessage: 'I totally understand what you mean',
-      time: '1h ago',
-      isOnline: false,
-    },
-    {
-      id: '3',
-      name: 'Maya R.',
-      lastMessage: 'Sending you hugs 💕',
-      time: '3h ago',
-      isOnline: true,
-    },
-  ];
-
-  const mockGroups = [
-    {
-      id: '1',
-      name: 'New Mothers Circle',
-      description: 'For mothers in their first 6 months',
-      members: 24,
-      lastActivity: '5m ago',
-    },
-    {
-      id: '2',
-      name: 'Breastfeeding Support',
-      description: 'Share experiences and tips',
-      members: 18,
-      lastActivity: '1h ago',
-    },
-    {
-      id: '3',
-      name: 'Work-Life Balance',
-      description: 'Returning to work discussions',
-      members: 15,
-      lastActivity: '2h ago',
-    },
-  ];
-
-  if (user?.isGuest) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <BackButton />
-        <View style={styles.lockedScreen}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to Connect</Text>
-          <Text style={styles.lockDescription}>
-            Connect with other mothers, share experiences, and build meaningful relationships in a safe space.
-          </Text>
-          <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <BackButton />
-      <View style={styles.header}>
-        <Text style={styles.title}>Circle of Support</Text>
-        <Text style={styles.subtitle}>
-          Connect with mothers who understand your journey
-        </Text>
-      </View>
-
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'chat' && styles.activeTab]}
-          onPress={() => setActiveTab('chat')}
-        >
-          <Text style={[styles.tabText, activeTab === 'chat' && styles.activeTabText]}>
-            Chats
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'groups' && styles.activeTab]}
-          onPress={() => setActiveTab('groups')}
-        >
-          <Text style={[styles.tabText, activeTab === 'groups' && styles.activeTabText]}>
-            Groups
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {activeTab === 'chat' ? (
-          <View>
-            {mockChats.map((chat) => (
-              <TouchableOpacity key={chat.id} style={styles.chatItem}>
-                <View style={styles.chatAvatar}>
-                  <Text style={styles.chatAvatarText}>
-                    {chat.name.charAt(0)}
-                  </Text>
-                  {chat.isOnline && <View style={styles.onlineIndicator} />}
-                </View>
-                <View style={styles.chatInfo}>
-                  <Text style={styles.chatName}>{chat.name}</Text>
-                  <Text style={styles.chatMessage}>{chat.lastMessage}</Text>
-                </View>
-                <Text style={styles.chatTime}>{chat.time}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : (
-          <View>
-            {mockGroups.map((group) => (
-              <TouchableOpacity key={group.id} style={styles.groupItem}>
-                <View style={styles.groupIcon}>
-                  <Text style={styles.groupIconText}>👥</Text>
-                </View>
-                <View style={styles.groupInfo}>
-                  <Text style={styles.groupName}>{group.name}</Text>
-                  <Text style={styles.groupDescription}>{group.description}</Text>
-                  <Text style={styles.groupMeta}>
-                    {group.members} members • {group.lastActivity}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-      </ScrollView>
-
-      <TouchableOpacity style={styles.fab}>
-        <Text style={styles.fabText}>+</Text>
-      </TouchableOpacity>
-    </SafeAreaView>
-  );
+type User = {
+  id: string;
+  name: string;
+  role: 'psychologist' | 'mom';
+  specialization?: string;
+  status: 'online' | 'offline';
 };
 
+type Message = {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  content: string;
+  timestamp: Date;
+  status: 'sent' | 'delivered' | 'read';
+};
+
+export default function CircleOfSupportScreen() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [message, setMessage] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
+  const currentUserId = 'current_user'; 
+
+  useEffect(() => {
+    setUsers([
+      { 
+        id: '1', 
+        name: 'Dr. Nisha Patel', 
+        role: 'psychologist',
+        specialization: 'Postpartum Mental Health',
+        status: 'online'
+      },
+      { 
+        id: '2', 
+        name: 'Aarti Sharma', 
+        role: 'mom',
+        status: 'online'
+      },
+      { 
+        id: '3', 
+        name: 'Rina Gupta', 
+        role: 'mom',
+        status: 'offline'
+      },
+    ]);
+  }, []);
+
+  useEffect(() => {
+    const handleMessage = (data: Message) => {
+      if (
+        selectedUser &&
+        (data.senderId === selectedUser.id || data.receiverId === selectedUser.id)
+      ) {
+        setMessages((prev) => [...prev, data]);
+        saveMessagesToStorage(selectedUser.id, [...messages, data]);
+      }
+    };
+
+    socket.on('receive_message', handleMessage);
+
+    return () => {
+      socket.off('receive_message', handleMessage);
+    };
+  }, [selectedUser, messages]);
+
+
+  const loadMessagesFromStorage = async (userId: string) => {
+    try {
+      const storedMessages = await AsyncStorage.getItem(`messages_${currentUserId}_${userId}`);
+      if (storedMessages) {
+        const parsedMessages = JSON.parse(storedMessages).map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(parsedMessages);
+      } else {
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      setMessages([]);
+    }
+  };
+
+  const saveMessagesToStorage = async (userId: string, messagesToSave: Message[]) => {
+    try {
+      await AsyncStorage.setItem(
+        `messages_${currentUserId}_${userId}`, 
+        JSON.stringify(messagesToSave)
+      );
+    } catch (error) {
+      console.error('Error saving messages:', error);
+    }
+  };
+
+  const handleUserSelect = async (user: User) => {
+    setSelectedUser(user);
+    setIsLoading(true);
+    await loadMessagesFromStorage(user.id);
+    setIsLoading(false);
+    
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+  };
+
+  const handleSend = async () => {
+    if (selectedUser && message.trim()) {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        senderId: currentUserId,
+        receiverId: selectedUser.id,
+        content: message.trim(),
+        timestamp: new Date(),
+        status: 'sent'
+      };
+
+      const updatedMessages = [...messages, newMessage];
+      setMessages(updatedMessages);
+      await saveMessagesToStorage(selectedUser.id, updatedMessages);
+      
+      socket.emit('send_message', newMessage);
+      setMessage('');
+      
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedUser(null);
+    setMessages([]);
+  };
+
+  const formatTime = (timestamp: Date) => {
+    return new Date(timestamp).toLocaleTimeString([], { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const renderMessage = ({ item }: { item: Message }) => (
+    <View
+      style={[
+        styles.messageBubble,
+        item.senderId === currentUserId ? styles.myMessage : styles.theirMessage,
+      ]}
+    >
+      <Text style={[
+        styles.messageText,
+        item.senderId === currentUserId ? styles.myMessageText : styles.theirMessageText
+      ]}>
+        {item.content}
+      </Text>
+      <Text style={[
+        styles.timestamp,
+        item.senderId === currentUserId ? styles.myTimestamp : styles.theirTimestamp
+      ]}>
+        {formatTime(item.timestamp)}
+      </Text>
+    </View>
+  );
+
+  const renderUserCard = ({ item }: { item: User }) => (
+    <TouchableOpacity
+      style={styles.userCard}
+      onPress={() => handleUserSelect(item)}
+    >
+      <View style={styles.userInfo}>
+        <View style={styles.userHeader}>
+          <Text style={styles.userName}>{item.name}</Text>
+          <View style={[
+            styles.statusDot, 
+            item.status === 'online' ? styles.onlineStatus : styles.offlineStatus
+          ]} />
+        </View>
+        <Text style={styles.userRole}>
+          {item.role === 'psychologist' 
+            ? item.specialization || 'Licensed Psychologist'
+            : 'Community Member'
+          }
+        </Text>
+        <Text style={styles.userStatus}>
+          {item.status === 'online' ? 'Available now' : 'Last seen recently'}
+        </Text>
+      </View>
+      <Text style={styles.chatArrow}>💬</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoiding}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+      >
+        <View style={styles.container}>
+          {!selectedUser ? (
+            <>
+              <View style={styles.header}>
+                <Text style={styles.title}>Circle of Support</Text>
+                <Text style={styles.subtitle}>
+                  Connect with professionals and community members
+                </Text>
+              </View>
+              
+              <FlatList
+                data={users}
+                keyExtractor={(item) => item.id}
+                renderItem={renderUserCard}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.usersList}
+              />
+            </>
+          ) : (
+            <View style={styles.chatContainer}>
+              {/* Chat Header */}
+              <View style={styles.chatHeader}>
+                <TouchableOpacity 
+                  onPress={handleBack} 
+                  style={styles.backButton}
+                >
+                  <Text style={styles.backButtonText}>← Back</Text>
+                </TouchableOpacity>
+                
+                <View style={styles.chatUserInfo}>
+                  <Text style={styles.chatUserName}>{selectedUser.name}</Text>
+                  <Text style={styles.chatUserRole}>
+                    {selectedUser.role === 'psychologist' 
+                      ? selectedUser.specialization || 'Licensed Psychologist'
+                      : 'Community Member'
+                    }
+                  </Text>
+                </View>
+                
+                <View style={[
+                  styles.headerStatusDot,
+                  selectedUser.status === 'online' ? styles.onlineStatus : styles.offlineStatus
+                ]} />
+              </View>
+
+              {/* Messages List */}
+              {isLoading ? (
+                <View style={styles.loadingContainer}>
+                  <Text style={styles.loadingText}>Loading messages...</Text>
+                </View>
+              ) : (
+                <FlatList
+                  ref={flatListRef}
+                  data={messages}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderMessage}
+                  contentContainerStyle={styles.messagesList}
+                  showsVerticalScrollIndicator={false}
+                  onContentSizeChange={() => 
+                    flatListRef.current?.scrollToEnd({ animated: true })
+                  }
+                />
+              )}
+
+              {/* Input Container */}
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Type your message..."
+                  value={message}
+                  onChangeText={setMessage}
+                  multiline
+                  maxLength={500}
+                />
+                <TouchableOpacity 
+                  onPress={handleSend} 
+                  style={[
+                    styles.sendButton,
+                    !message.trim() && styles.sendButtonDisabled
+                  ]}
+                  disabled={!message.trim()}
+                >
+                  <Text style={styles.sendButtonText}>Send</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F7F5EB',
+  },
+  keyboardAvoiding: {
+    flex: 1,
+  },
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-  lockedScreen: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  lockIcon: {
-    fontSize: 64,
-    marginBottom: 20,
-  },
-  lockTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: Colors.jet,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  lockDescription: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  joinButton: {
-    backgroundColor: Colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
-  },
-  joinButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.jet,
+    backgroundColor: '#F7F5EB',
+    padding: 16,
   },
   header: {
-    padding: 20,
-    paddingTop: 60,
-    alignItems: 'center',
+    marginBottom: 24,
+    paddingTop: 20,
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: Colors.jet,
+    fontWeight: '700',
+    color: '#323431',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
+    color: '#64748B',
+    lineHeight: 22,
   },
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 16,
+  usersList: {
+    paddingBottom: 20,
   },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: Colors.primary,
-  },
-  tabText: {
-    fontSize: 16,
-    color: Colors.textSecondary,
-  },
-  activeTabText: {
-    color: Colors.jet,
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  chatItem: {
+  userCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: Colors.surface,
+    justifyContent: 'space-between',
+    padding: 20,
+    backgroundColor: '#fff',
     borderRadius: 16,
-    marginBottom: 8,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  chatAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.primary,
-    justifyContent: 'center',
+  userInfo: {
+    flex: 1,
+  },
+  userHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 12,
-    position: 'relative',
+    marginBottom: 4,
   },
-  chatAvatarText: {
+  userName: {
     fontSize: 18,
     fontWeight: '600',
-    color: Colors.jet,
+    color: '#323431',
+    marginRight: 8,
   },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#4CAF50',
-    borderWidth: 2,
-    borderColor: Colors.surface,
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
-  chatInfo: {
+  onlineStatus: {
+    backgroundColor: '#22C55E',
+  },
+  offlineStatus: {
+    backgroundColor: '#94A3B8',
+  },
+  userRole: {
+    fontSize: 14,
+    color: '#059669',
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  userStatus: {
+    fontSize: 12,
+    color: '#64748B',
+  },
+  chatArrow: {
+    fontSize: 24,
+  },
+  chatContainer: {
     flex: 1,
   },
-  chatName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.jet,
-    marginBottom: 4,
-  },
-  chatMessage: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  chatTime: {
-    fontSize: 12,
-    color: Colors.textSecondary,
-  },
-  groupItem: {
+  chatHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: Colors.surface,
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+    marginBottom: 16,
+  },
+  backButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#F1F5F9',
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#64748B',
+    fontWeight: '500',
+  },
+  chatUserInfo: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  chatUserName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#323431',
+  },
+  chatUserRole: {
+    fontSize: 12,
+    color: '#059669',
+    marginTop: 2,
+  },
+  headerStatusDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#64748B',
+  },
+  messagesList: {
+    flexGrow: 1,
+    paddingVertical: 8,
+  },
+  messageBubble: {
+    padding: 14,
     borderRadius: 16,
-    marginBottom: 8,
-    shadowColor: Colors.black,
+    marginBottom: 12,
+    maxWidth: '75%',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 1,
   },
-  groupIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.mintGreen,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
+  myMessage: {
+    backgroundColor: '#EEB6E7',
+    alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
   },
-  groupIconText: {
-    fontSize: 20,
+  theirMessage: {
+    backgroundColor: '#fff',
+    alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  groupInfo: {
-    flex: 1,
-  },
-  groupName: {
+  messageText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: Colors.jet,
-    marginBottom: 4,
+    lineHeight: 22,
   },
-  groupDescription: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-    marginBottom: 4,
+  myMessageText: {
+    color: '#fff',
   },
-  groupMeta: {
-    fontSize: 12,
-    color: Colors.textSecondary,
+  theirMessageText: {
+    color: '#323431',
   },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: Colors.primary,
+  timestamp: {
+    fontSize: 10,
+    marginTop: 4,
+  },
+  myTimestamp: {
+    color: 'rgba(255,255,255,0.7)',
+    alignSelf: 'flex-end',
+  },
+  theirTimestamp: {
+    color: '#94A3B8',
+    alignSelf: 'flex-start',
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingTop: 16,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
+    backgroundColor: '#F7F5EB',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+  },
+  textInput: {
+    flex: 1,
+    minHeight: 44,
+    maxHeight: 100,
+    padding: 14,
+    backgroundColor: '#fff',
+    borderRadius: 22,
+    marginRight: 12,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+    fontSize: 16,
+    textAlignVertical: 'center',
+  },
+  sendButton: {
+    backgroundColor: '#EEB6E7',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: Colors.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    minWidth: 60,
   },
-  fabText: {
-    fontSize: 24,
-    color: Colors.jet,
+  sendButtonDisabled: {
+    backgroundColor: '#CBD5E1',
+  },
+  sendButtonText: {
+    color: '#fff',
     fontWeight: '600',
+    fontSize: 16,
   },
 });

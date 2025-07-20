@@ -1,4 +1,4 @@
-import { CircleOfSupportScreen } from '@/screens/CircleOfSupportScreen';
+import  CircleOfSupportScreen  from '@/screens/CircleOfSupportScreen';
 
 export default function Support() {
   return <CircleOfSupportScreen />;

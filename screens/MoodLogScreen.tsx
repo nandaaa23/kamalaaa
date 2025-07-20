@@ -18,7 +18,6 @@ export const MoodLogScreen: React.FC = () => {
       mood: mood,
     });
 
-    // Show validating message
     const messages = {
       happy: "It's wonderful to see you feeling okay today. Keep nurturing these moments. 🌸",
       down: "It's okay to feel down. You're being gentle with yourself by checking in. 💙",
@@ -28,7 +27,6 @@ export const MoodLogScreen: React.FC = () => {
 
     Alert.alert('Thank you for sharing', messages[mood]);
     
-    // Show streak info
     const streak = getMoodStreak();
     if (streak > 1) {
       setTimeout(() => {

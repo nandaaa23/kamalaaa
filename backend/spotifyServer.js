@@ -10,7 +10,6 @@ app.use(cors());
 
 let accessToken = null;
 
-// Fetch Spotify access token using Client Credentials flow
 async function getAccessToken() {
   const response = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
@@ -25,7 +24,6 @@ async function getAccessToken() {
   accessToken = data.access_token;
 }
 
-// Route to fetch podcasts related to postpartum topics
 app.get('/spotify/podcasts', async (req, res) => {
   try {
     if (!accessToken) await getAccessToken();

@@ -14,7 +14,6 @@ import {
   ForumPost,
 } from '../types';
 
-// ✅ NEW Podcast type
 type Podcast = {
   id: string;
   title: string;
@@ -28,7 +27,7 @@ interface DataContextType {
   secrets: Secret[];
   heartbeatMoments: HeartbeatMoment[];
   forumPosts: ForumPost[];
-  podcasts: Podcast[]; // ✅ Added podcast here
+  podcasts: Podcast[]; 
   addMoodEntry: (entry: Omit<MoodEntry, 'id'>) => Promise<void>;
   addReflection: (reflection: Omit<Reflection, 'id'>) => Promise<void>;
   addSecret: (secret: Omit<Secret, 'id'>) => Promise<void>;
@@ -55,7 +54,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [heartbeatMoments, setHeartbeatMoments] = useState<HeartbeatMoment[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
 
-  // ✅ Add podcast state with dummy data
   const [podcasts] = useState<Podcast[]>([
     {
       id: '1',
@@ -182,7 +180,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         secrets,
         heartbeatMoments,
         forumPosts,
-        podcasts, // ✅ Now provided
+        podcasts, 
         addMoodEntry,
         addReflection,
         addSecret,

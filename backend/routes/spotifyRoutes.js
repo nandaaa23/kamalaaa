@@ -8,7 +8,6 @@ const router = express.Router();
 let accessToken = null;
 let tokenExpiry = 0;
 
-// 1. Auto-generate token using Client Credentials Flow
 async function getSpotifyToken() {
   const now = Date.now();
   if (accessToken && now < tokenExpiry) return accessToken;
@@ -35,7 +34,6 @@ async function getSpotifyToken() {
   return accessToken;
 }
 
-// 2. Search podcasts using keywords
 router.get('/podcasts', async (req, res) => {
   try {
     const token = await getSpotifyToken();

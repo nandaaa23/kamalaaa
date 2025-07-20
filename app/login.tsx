@@ -1,4 +1,3 @@
-// Step 2: Create fresh app/login.tsx (copy this exactly)
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';

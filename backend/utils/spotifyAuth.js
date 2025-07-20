@@ -1,4 +1,3 @@
-// spotifyAuth.js
 import axios from 'axios';
 import { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } from '../constants/spotifyConfig';
 

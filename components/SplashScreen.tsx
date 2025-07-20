@@ -8,7 +8,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
-import WaveImage from '../assets/images/wave.png'; // Ensure correct path
+import WaveImage from '../assets/images/wave.png'; 
 
 const { height } = Dimensions.get('window');
 
@@ -17,16 +17,14 @@ interface SplashScreenProps {
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
-  const waveTranslateY = useSharedValue(0); // Start at bottom
+  const waveTranslateY = useSharedValue(0); 
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
 
   useEffect(() => {
-    // Fade in title and subtitle
     titleOpacity.value = withDelay(500, withTiming(1, { duration: 800 }));
     subtitleOpacity.value = withDelay(1200, withTiming(1, { duration: 800 }));
 
-    // Move wave upwards to cover full screen
     setTimeout(() => {
       waveTranslateY.value = withTiming(height + height / 3, { duration: 1500 });
       setTimeout(onComplete, 1600);
@@ -60,7 +58,6 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           </Animated.Text>
         </View>
 
-        {/* Wave image at bottom */}
         <Animated.View style={[styles.waveWrapper, waveStyle]}>
           <Image source={WaveImage} style={styles.waveImage} resizeMode="cover" />
         </Animated.View>
@@ -100,7 +97,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: height / 3, // Show 1/3rd initially
+    height: height / 3, 
     zIndex: 10,
   },
   waveImage: {

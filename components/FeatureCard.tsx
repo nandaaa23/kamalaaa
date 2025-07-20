@@ -1,4 +1,3 @@
-// components/FeatureCard.tsx
 import React from 'react';
 import { TouchableOpacity, View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';

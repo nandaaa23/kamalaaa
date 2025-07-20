@@ -1,4 +1,3 @@
-// Step 3: Create fresh app/register.tsx (copy this exactly)
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';

@@ -1,4 +1,3 @@
-// fetchSpotifyPodcasts.js
 import axios from 'axios';
 import { getSpotifyToken } from './spotifyAuth';
 
