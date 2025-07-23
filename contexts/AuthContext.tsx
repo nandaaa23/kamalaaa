@@ -1,21 +1,20 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserProfile } from '../types';
-import * as WebBrowser from 'expo-web-browser';
-import * as Google from 'expo-auth-session/providers/google';
-
-WebBrowser.maybeCompleteAuthSession();
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut as firebaseSignOut } from 'firebase/auth';
+import { auth, db } from '../firebase/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<void>;
-  signOut: () => Promise<void>;
-  enterGuestMode: () => void;
+  login: (email: string, password: string) => Promise<User>;
+  register: (name: string, email: string, password: string, role: 'mother' | 'psychologist') => Promise<User>;
+  logout: () => Promise<void>;
+  enterGuestMode: (role: 'mother' | 'psychologist') => User;
   updateProfile: (profile: UserProfile) => Promise<void>;
   completeOnboarding: () => Promise<void>;
-  setUserWithRole: (userData: any, role: string) => void;
 }
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -27,151 +26,87 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    androidClientId: '202092173655-tkca4lpftb83klgu037uitietr9cauqg.apps.googleusercontent.com',
-    webClientId: '202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com',
-  });
-
-  useEffect(() => {
-    loadUserFromStorage();
-  }, []);
-
-  useEffect(() => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      fetchUserInfo(authentication?.accessToken);
-    }
-  }, [response]);
-
-  const loadUserFromStorage = async () => {
+  const login = async (email: string, password: string): Promise<User> => {
+    setIsLoading(true);
     try {
-      const userData = await AsyncStorage.getItem('user');
-      if (userData) setUser(JSON.parse(userData));
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const roleDoc = await getDoc(doc(db, 'roles', userCredential.user.uid));
+      const role = roleDoc.exists() ? (roleDoc.data().role as 'mother' | 'psychologist') : 'mother';
+
+      const userDoc = await getDoc(doc(db, role === 'mother' ? 'mothers' : 'psychologists', userCredential.user.uid));
+      if (!userDoc.exists()) throw new Error('User data not found in Firestore.');
+
+      const userData = userDoc.data() as User;
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error('Error loading user from storage:', error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const saveUserToStorage = async (userData: User) => {
+  const register = async (name: string, email: string, password: string, role: 'mother' | 'psychologist'): Promise<User> => {
+    setIsLoading(true);
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error saving user to storage:', error);
-    }
-  };
-
-  const signInWithGoogle = async () => {
-    try {
-      await promptAsync();
-    } catch (error) {
-      console.error('Google Sign-In error:', error);
-    }
-  };
-
-  const fetchUserInfo = async (token: string | undefined) => {
-    try {
-      if (!token) return;
-
-      const res = await fetch('https://www.googleapis.com/userinfo/v2/me', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const userInfo = await res.json();
-
-      if (!userInfo || !userInfo.id || !userInfo.email) {
-        throw new Error('Invalid user info from Google');
-      }
-
-      const selectedRole = await AsyncStorage.getItem('selected_role');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
       const newUser: User = {
-        id: userInfo.id,
-        name: userInfo.name,
-        email: userInfo.email,
-        role: (selectedRole as 'mother' | 'psychologist') || 'mother', 
+        id: userCredential.user.uid,
+        name,
+        email,
+        role,
         isGuest: false,
-        onboardingComplete: selectedRole === 'psychologist', 
+        onboardingComplete: false,
       };
 
+      await setDoc(doc(db, 'roles', newUser.id), { role });
+      await setDoc(doc(db, role === 'mother' ? 'mothers' : 'psychologists', newUser.id), newUser);
       setUser(newUser);
-      await saveUserToStorage(newUser);
+      return newUser;
     } catch (error) {
-      console.error('Failed to fetch user info:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const signOut = async () => {
-    try {
-      await AsyncStorage.removeItem('user');
-      await AsyncStorage.removeItem('selected_role');
-      await AsyncStorage.removeItem('intro_complete');
-      setUser(null);
-    } catch (error) {
-      console.error('Sign out error:', error);
-    }
+  const logout = async () => {
+    await firebaseSignOut(auth);
+    setUser(null);
   };
 
-  const enterGuestMode = async () => {
-    const selectedRole = await AsyncStorage.getItem('selected_role');
+  const enterGuestMode = (role: 'mother' | 'psychologist'): User => {
     const guestUser: User = {
       id: 'guest',
       name: 'Guest',
       email: '',
-      role: (selectedRole as 'mother' | 'psychologist') || 'mother', 
+      role,
       isGuest: true,
       onboardingComplete: true,
     };
     setUser(guestUser);
-    await saveUserToStorage(guestUser);
+    return guestUser;
   };
 
   const updateProfile = async (profile: UserProfile) => {
     if (!user) return;
-
     const updatedUser = { ...user, profile };
     setUser(updatedUser);
-    await saveUserToStorage(updatedUser);
+    await setDoc(doc(db, user.role === 'mother' ? 'mothers' : 'psychologists', user.id), updatedUser);
   };
 
   const completeOnboarding = async () => {
     if (!user) return;
-
     const updatedUser = { ...user, onboardingComplete: true };
     setUser(updatedUser);
-    await saveUserToStorage(updatedUser);
-  };
-
-  const setUserWithRole = async (userData: any, role: string) => {
-    const newUser: User = {
-      id: userData.uid || userData.id,
-      name: userData.displayName || userData.name || 'User',
-      email: userData.email,
-      role: role as 'mother' | 'psychologist', 
-      isGuest: false,
-      onboardingComplete: role === 'psychologist', 
-    };
-    
-    setUser(newUser);
-    await saveUserToStorage(newUser);
+    await setDoc(doc(db, user.role === 'mother' ? 'mothers' : 'psychologists', user.id), updatedUser);
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        isLoading,
-        signInWithGoogle,
-        signOut,
-        enterGuestMode,
-        updateProfile,
-        completeOnboarding,
-        setUserWithRole,
-      }}
-    >
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, enterGuestMode, updateProfile, completeOnboarding }}>
       {children}
     </AuthContext.Provider>
   );

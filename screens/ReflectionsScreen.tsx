@@ -11,24 +11,6 @@ export const ReflectionsScreen: React.FC = () => {
   const { addReflection, reflections } = useData();
   const { user } = useAuth();
 
-  if (user?.isGuest) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <BackButton />
-        <View style={styles.lockedScreen}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to unlock journaling</Text>
-          <Text style={styles.lockDescription}>
-            A private space for your thoughts — no one sees this unless you choose.
-          </Text>
-          <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const moods = ['😊', '😞', '😤', '💭', '😌', '😔'];
 
   const handleSave = async () => {

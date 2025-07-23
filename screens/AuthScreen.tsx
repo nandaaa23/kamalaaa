@@ -1,53 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import {
+  View, Text, StyleSheet, TouchableOpacity, Modal,
+  TextInput, Alert, ActivityIndicator
+} from 'react-native';
+import { useAuth } from '../contexts/AuthContext';
+import { User } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface AuthScreenProps {
-  onComplete?: (user?: User) => void;
+  onComplete: (authenticatedUser?: User) => void;
 }
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'mother' | 'psychologist';
-  isGuest: boolean;
-  onboardingComplete: boolean;
-  profile?: any;
-  createdAt?: string;
-}
-
-const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
-  visible: boolean;
-  onClose: () => void;
-  onRegister: () => void;
-  onSuccess: (userData: { name: string; email: string }) => void;
-}) => {
-  const [name, setName] = useState(''); 
+const LoginModal = ({ visible, onClose, onSwitch, onLoginSuccess }: any) => {
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
+    if (!email || !password) return Alert.alert('Fill all fields');
     setIsLoading(true);
-    
-    setTimeout(() => {
+    try {
+      const user = await login(email.trim(), password.trim());
+      onClose();
+      onLoginSuccess(user);
+    } catch (err: any) {
+      Alert.alert('Login Failed', err.message);
+    } finally {
       setIsLoading(false);
-      Alert.alert('Success!', `Welcome back, ${name.trim()}!`, [
-        { text: 'OK', onPress: () => {
-          onClose();
-          onSuccess({
-            name: name.trim(),
-            email: email.trim()
-          });
-        }}
-      ]);
-    }, 1000);
+    }
   };
 
   return (
@@ -63,23 +44,13 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
         <View style={styles.modalContent}>
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
-            value={name}
-            onChangeText={setName}
-            editable={!isLoading}
-            autoCapitalize="words"
-          />
-
-          <TextInput
-            style={styles.input}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
-            keyboardType="email-address"
             autoCapitalize="none"
+            keyboardType="email-address"
             editable={!isLoading}
           />
-
           <TextInput
             style={styles.input}
             placeholder="Password"
@@ -89,8 +60,8 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
             editable={!isLoading}
           />
 
-          <TouchableOpacity 
-            style={[styles.button, isLoading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleLogin}
             disabled={isLoading}
           >
@@ -99,7 +70,7 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={onRegister} disabled={isLoading}>
+          <TouchableOpacity onPress={onSwitch} disabled={isLoading}>
             <Text style={styles.linkText}>Don't have an account? Register</Text>
           </TouchableOpacity>
         </View>
@@ -108,51 +79,36 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
   );
 };
 
-const RegisterModal = ({ visible, onClose, onLogin }: {
-  visible: boolean;
-  onClose: () => void;
-  onLogin: () => void;
-}) => {
-  const [name, setName] = useState(''); 
+const RegisterModal = ({ visible, onClose, onSwitch, onRegisterSuccess }: any) => {
+  const { register } = useAuth();
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleRegister = async () => {
-    if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
-      return;
-    }
+    if (!name || !email || !password || !confirm)
+      return Alert.alert('Fill all fields');
+    if (password !== confirm)
+      return Alert.alert('Passwords do not match');
 
     setIsLoading(true);
-    
-    setTimeout(() => {
+    try {
+      const storedRole = await AsyncStorage.getItem('selected_role');
+      const selectedRole: 'mother' | 'psychologist' = storedRole === 'psychologist' ? 'psychologist' : 'mother';
+
+      const user = await register(name.trim(), email.trim(), password.trim(), selectedRole);  
+      Alert.alert('Success', 'Account created! Please log in.');
+      
+      onClose();
+      
+      
+    } catch (err: any) {
+      Alert.alert('Registration Failed', err.message);
+    } finally {
       setIsLoading(false);
-      Alert.alert('Success!', `Account created for ${name.trim()}! Please login with your credentials.`, [
-        {
-          text: 'OK',
-          onPress: () => {
-            setName('');
-            setEmail('');
-            setPassword('');
-            setConfirmPassword('');
-            onClose();
-            onLogin();
-          }
-        }
-      ]);
-    }, 1000);
+    }
   };
 
   return (
@@ -162,49 +118,45 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.closeButton}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Create Account</Text>
+          <Text style={styles.modalTitle}>Register</Text>
         </View>
 
         <View style={styles.modalContent}>
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
+            placeholder="Name"
             value={name}
             onChangeText={setName}
             editable={!isLoading}
-            autoCapitalize="words"
           />
-
           <TextInput
             style={styles.input}
             placeholder="Email"
             value={email}
             onChangeText={setEmail}
-            keyboardType="email-address"
             autoCapitalize="none"
+            keyboardType="email-address"
             editable={!isLoading}
           />
-
           <TextInput
             style={styles.input}
-            placeholder="Password (min 6 characters)"
+            placeholder="Password"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
             editable={!isLoading}
           />
-
           <TextInput
             style={styles.input}
             placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            value={confirm}
+            onChangeText={setConfirm}
             secureTextEntry
             editable={!isLoading}
           />
 
-          <TouchableOpacity 
-            style={[styles.button, isLoading && styles.buttonDisabled]} 
+          <TouchableOpacity
+            style={[styles.button, isLoading && styles.buttonDisabled]}
             onPress={handleRegister}
             disabled={isLoading}
           >
@@ -213,7 +165,7 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
             </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={onLogin} disabled={isLoading}>
+          <TouchableOpacity onPress={onSwitch} disabled={isLoading}>
             <Text style={styles.linkText}>Already have an account? Login</Text>
           </TouchableOpacity>
         </View>
@@ -222,82 +174,16 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
   );
 };
 
-const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
+const AuthScreen = ({ onComplete }: AuthScreenProps) => {
+  const { enterGuestMode, isLoading } = useAuth();
   const [showLogin, setShowLogin] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
 
-  console.log('🎉 AuthScreen from screens/ loaded successfully!');
-
-  const handleLogin = () => {
-    console.log('🔐 Opening login modal...');
-    setShowLogin(true);
-  };
-
-  const handleRegister = () => {
-    console.log('📝 Opening register modal...');
-    setShowRegister(true);
-  };
-
-  const handleExplore = async () => {
-    console.log('👀 Explore button pressed - entering guest mode');
-    
-    const selectedRole = await AsyncStorage.getItem('selected_role');
-    const guestUser: User = {
-      id: 'guest',
-      name: 'Guest',
-      email: '',
-      role: (selectedRole as 'mother' | 'psychologist') || 'mother',
-      isGuest: true,
-      onboardingComplete: true,
-      profile: {},
-      createdAt: new Date().toISOString()
-    };
-    
-    console.log('👤 Created guest user:', guestUser);
-    await AsyncStorage.setItem('user', JSON.stringify(guestUser));
-    console.log('💾 Guest user saved to AsyncStorage');
-    
-    if (onComplete) {
-      onComplete(guestUser);
-    }
-  };
-
-  const switchToRegister = () => {
-    setShowLogin(false);
-    setShowRegister(true);
-  };
-
-  const switchToLogin = () => {
-    setShowRegister(false);
-    setShowLogin(true);
-  };
-
-  const handleAuthSuccess = async (userData: { name: string; email: string }) => {
-    console.log('🎉 Authentication successful');
-    
-    const selectedRole = await AsyncStorage.getItem('selected_role');
-    const authUser: User = {
-      id: 'auth_user_' + Date.now(),
-      name: userData.name, 
-      email: userData.email, 
-      role: (selectedRole as 'mother' | 'psychologist') || 'mother',
-      isGuest: false,
-      onboardingComplete: selectedRole === 'psychologist', 
-      profile: selectedRole === 'psychologist' ? {} : undefined,
-      createdAt: new Date().toISOString()
-    };
-    
-    console.log('👤 Created user object:', authUser);
-    await AsyncStorage.setItem('user', JSON.stringify(authUser));
-    console.log('💾 User saved to AsyncStorage');
-    
-    setShowLogin(false);
-    setShowRegister(false);
-    
-    if (onComplete) {
-      onComplete(authUser);
-    }
-  };
+  const handleGuestMode = async () => {
+  const selectedRole = (await AsyncStorage.getItem('selected_role')) as 'mother' | 'psychologist' || 'mother';
+  const user = await enterGuestMode(selectedRole);
+  onComplete(user);
+};
 
   return (
     <View style={styles.container}>
@@ -314,159 +200,101 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
         <View style={styles.authButtons}>
           <TouchableOpacity
             style={[styles.authButton, { backgroundColor: '#E8B4CB' }]}
-            onPress={handleLogin}
+            onPress={() => setShowLogin(true)}
           >
             <Text style={styles.authButtonText}>Login</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.authButton, { backgroundColor: '#E8B4CB' }]}
-            onPress={handleRegister}
+            onPress={() => setShowRegister(true)}
           >
             <Text style={styles.authButtonText}>Register</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.exploreButton}
-            onPress={handleExplore}
+            onPress={handleGuestMode}
           >
             <Text style={styles.exploreButtonText}>Explore Kamala</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <LoginModal 
-        visible={showLogin} 
+      <LoginModal
+        visible={showLogin}
         onClose={() => setShowLogin(false)}
-        onRegister={switchToRegister}
-        onSuccess={handleAuthSuccess}
+        onSwitch={() => {
+          setShowLogin(false);
+          setShowRegister(true);
+        }}
+        onLoginSuccess={onComplete}
       />
 
-      <RegisterModal 
-        visible={showRegister} 
+      <RegisterModal
+        visible={showRegister}
         onClose={() => setShowRegister(false)}
-        onLogin={switchToLogin}
+        onSwitch={() => {
+          setShowRegister(false);
+          setShowLogin(true);
+        }}
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
   content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
+    flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40,
   },
   logo: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#2D3748',
-    marginBottom: 60,
+    fontSize: 48, fontWeight: 'bold', color: '#2D3748', marginBottom: 60,
   },
   tagline: {
-    fontSize: 18,
-    color: '#718096',
-    fontStyle: 'italic',
-    marginBottom: 40,
+    fontSize: 18, color: '#718096', fontStyle: 'italic', marginBottom: 40,
   },
   welcomeSection: {
-    marginBottom: 60,
+    marginBottom: 40
   },
   welcomeText: {
-    fontSize: 18,
-    color: '#2D3748',
-    textAlign: 'center',
-    lineHeight: 28,
+    fontSize: 18, color: '#2D3748', textAlign: 'center', lineHeight: 28,
   },
-  authButtons: {
-    width: '100%',
-    gap: 16,
-  },
+  authButtons: { width: '100%', gap: 16 },
   authButton: {
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: 'center',
+    paddingVertical: 16, borderRadius: 16, alignItems: 'center', marginBottom: 16,
   },
   authButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontSize: 16, fontWeight: '600', color: 'white',
   },
   exploreButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    backgroundColor: 'transparent', paddingVertical: 16, borderRadius: 16,
+    alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0',
   },
   exploreButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#718096',
+    fontSize: 16, fontWeight: '600', color: '#718096',
   },
-  
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  modalContainer: { flex: 1, backgroundColor: '#fff' },
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
+    flexDirection: 'row', alignItems: 'center', padding: 20,
+    paddingTop: 60, borderBottomWidth: 1, borderBottomColor: '#E2E8F0',
   },
-  closeButton: {
-    fontSize: 24,
-    color: '#666',
-    marginRight: 20,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2D3748',
-  },
+  closeButton: { fontSize: 24, color: '#666', marginRight: 20 },
+  modalTitle: { fontSize: 24, fontWeight: 'bold', color: '#2D3748' },
   modalContent: {
-    flex: 1,
-    padding: 40,
-    justifyContent: 'center',
+    flex: 1, padding: 40, justifyContent: 'center',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12,
+    padding: 16, marginBottom: 16, fontSize: 16, backgroundColor: '#f9f9f9',
   },
   button: {
-    backgroundColor: '#E8B4CB',
-    padding: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: '#E8B4CB', padding: 16, borderRadius: 12,
+    alignItems: 'center', marginBottom: 20,
   },
-  buttonDisabled: {
-    backgroundColor: '#ccc',
-  },
-  buttonText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#E8B4CB',
-    fontSize: 16,
-  },
+  buttonDisabled: { backgroundColor: '#ccc' },
+  buttonText: { fontSize: 16, fontWeight: 'bold', color: 'white' },
+  linkText: { textAlign: 'center', color: '#E8B4CB', fontSize: 16 },
 });
 
 export default AuthScreen;

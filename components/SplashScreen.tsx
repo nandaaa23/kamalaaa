@@ -6,6 +6,9 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
+  FadeOut,
+  Easing,
+  runOnJS
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import WaveImage from '../assets/images/wave.png'; 
@@ -20,15 +23,39 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const waveTranslateY = useSharedValue(0); 
   const titleOpacity = useSharedValue(0);
   const subtitleOpacity = useSharedValue(0);
+  const containerOpacity = useSharedValue(1);
 
   useEffect(() => {
-    titleOpacity.value = withDelay(500, withTiming(1, { duration: 800 }));
-    subtitleOpacity.value = withDelay(1200, withTiming(1, { duration: 800 }));
+      titleOpacity.value = withTiming(1, {
+      duration: 800,
+      easing: Easing.out(Easing.ease),
+    });
+      subtitleOpacity.value = withDelay(
+      500,
+      withTiming(1, {
+        duration: 1000,
+        easing: Easing.out(Easing.ease),
+      })
+    );
 
     setTimeout(() => {
-      waveTranslateY.value = withTiming(height + height / 3, { duration: 1500 });
-      setTimeout(onComplete, 1600);
-    }, 4000);
+      waveTranslateY.value = withTiming(height + height / 3, {
+        duration: 1000,
+        easing: Easing.inOut(Easing.ease),
+      });
+    }, 3200);
+
+    setTimeout(() => {
+      containerOpacity.value = withTiming(0, {
+        duration: 500,
+        easing: Easing.ease,
+      }, (finished) => {
+        if (finished) {
+          runOnJS(onComplete)(); 
+        }
+      });
+    }, 4200);
+
   }, []);
 
   const titleStyle = useAnimatedStyle(() => ({

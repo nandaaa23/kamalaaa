@@ -17,6 +17,17 @@ export interface UserProfile {
   language: string;
   displayName: string;
   role?: 'mother' | 'psychologist';
+  specialization?: string;
+  gender?: string;
+  city?: string;
+  registrationNumber?: string;
+  registrationCouncil?: string;
+  registrationYear?: string;
+  degree?: string;
+  college?: string;
+  completionYear?: string;
+  experience?: string;
+  diploma?: string;
 }
 
 export interface MoodEntry {
@@ -74,7 +85,6 @@ export interface ForumReply {
   timestamp: number;
 }
 
-// types.ts
 export type RootStackParamList = {
   HomeScreen: undefined;
   ChatbotScreen: undefined;

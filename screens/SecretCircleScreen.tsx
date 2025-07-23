@@ -17,24 +17,6 @@ export const SecretCircleScreen: React.FC = () => {
 
   const floatAnimation = useSharedValue(0);
 
-  if (user?.isGuest) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <BackButton />
-        <View style={styles.lockedScreen}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to access Secret Circle</Text>
-          <Text style={styles.lockDescription}>
-            Let go of your heaviest thoughts — no names, no judgment. Anonymous sharing and replies.
-          </Text>
-          <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const handleShareSecret = async () => {
     if (!secretText.trim()) return;
   

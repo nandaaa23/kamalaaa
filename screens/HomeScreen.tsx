@@ -90,6 +90,7 @@ const HomeScreen: React.FC = () => {
           {
             text: 'Sign Up',
             onPress: () => {
+              router.push('/auth');
               console.log('Navigate to signup');
             },
           },

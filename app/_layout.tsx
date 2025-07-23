@@ -7,6 +7,7 @@ import { SplashScreen } from '@/components/SplashScreen';
 import { IntroductionScreens } from '@/components/IntroductionScreens';
 import { RoleSelectorScreen } from '@/screens/RoleSelectorScreen';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
+import { OnboardingpsychoScreen } from '@/components/OnboardingpyschoScreen';
 import AuthScreen from '@/screens/AuthScreen';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
@@ -46,7 +47,8 @@ function AppContent() {
       try {
         console.log('🔍 Initializing app...');
 
-         await AsyncStorage.clear();
+          await AsyncStorage.clear(); // clear only once
+
 
         const [userData, introDone, role] = await Promise.all([
           AsyncStorage.getItem('user'),
@@ -64,14 +66,14 @@ function AppContent() {
           const user: User = JSON.parse(userData);
           setCurrentUser(user);
           
-          if (user.role === 'mother' && !user.isGuest && !user.onboardingComplete) {
-            console.log('📝 Mother needs onboarding');
-            setAppState('onboarding');
-          } else {
-            console.log('✅ User ready for app');
-            setAppState('ready');
-            setIsReady(true);
-          }
+          if (!user.isGuest && !user.onboardingComplete) {
+          console.log(`📝 ${user.role} needs onboarding`);
+          setAppState('onboarding');
+        } else {
+          console.log('✅ User ready for app');
+          setAppState('ready');
+          setIsReady(true);
+}
         } else if (!introDone) {
           setAppState('intro');
         } else if (!role) {
@@ -124,47 +126,52 @@ function AppContent() {
     setAppState('auth');
   };
 
-  const handleAuthComplete = async (authenticatedUser?: User) => {
-    console.log('🔐 Auth completed:', authenticatedUser);
-    
-    if (!authenticatedUser) return;
+const handleAuthComplete = async (authenticatedUser?: User) => {
+  console.log('🔐 Auth completed:', authenticatedUser);
+  
+  if (!authenticatedUser) return;
 
-    setCurrentUser(authenticatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(authenticatedUser));
-    
-    if (authenticatedUser.role === 'mother' && 
-        !authenticatedUser.isGuest && 
-        !authenticatedUser.onboardingComplete) {
+  setCurrentUser(authenticatedUser);
+  await AsyncStorage.setItem('user', JSON.stringify(authenticatedUser));
+
+  if (!authenticatedUser.isGuest && !authenticatedUser.onboardingComplete) {
+    if (authenticatedUser.role === 'mother' || authenticatedUser.role === 'psychologist') {
       setAppState('onboarding');
     } else {
       setAppState('ready');
       setIsReady(true);
-    }
+  }
+} else {
+  setAppState('ready');
+  setIsReady(true);
+}
+
+};
+
+const handleOnboardingComplete = async (profileData?: any) => {
+  console.log('📝 Onboarding completed');
+
+  const user = currentUser || await AsyncStorage.getItem('user').then(u => u ? JSON.parse(u) : null);
+
+  if (!user) {
+    console.error('❌ No user found during onboarding completion');
+    setAppState('auth');
+    return;
+  }
+
+  const updatedUser: User = {
+    ...user,
+    onboardingComplete: true,
+    profile: profileData || {},
   };
 
-  const handleOnboardingComplete = async (profileData?: any) => {
-    console.log('📝 Onboarding completed');
-    
-    const user = currentUser || await AsyncStorage.getItem('user').then(u => u ? JSON.parse(u) : null);
-    
-    if (!user) {
-      console.error('❌ No user found during onboarding completion');
-      setAppState('auth');
-      return;
-    }
+  setCurrentUser(updatedUser);
+  await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
 
-    const updatedUser: User = {
-      ...user,
-      onboardingComplete: true,
-      profile: profileData || {}
-    };
-    
-    setCurrentUser(updatedUser);
-    await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-    
-    setAppState('ready');
-    setIsReady(true);
-  };
+  setAppState('ready');
+  setIsReady(true);
+};
+
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -218,8 +225,22 @@ function AppContent() {
   }
 
   if (appState === 'onboarding') {
-    return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+  if (!currentUser) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+        <Text>Loading user profile...</Text>
+      </View>
+    );
   }
+
+  if (currentUser.role === 'psychologist') {
+    return <OnboardingpsychoScreen onComplete={handleOnboardingComplete} />;
+  }
+
+  return <OnboardingScreen onComplete={handleOnboardingComplete} />;
+}
+
 
   return (
     <>

@@ -31,7 +31,7 @@ export default function ChatScreen() {
   const [sessionId, setSessionId] = useState('');
   const router = useRouter();
 
-  const API_BASE_URL = 'http://192.168.1.2:5000';
+  const API_BASE_URL = 'http://192.168.137.82:5000';
 
   useEffect(() => {
     initializeSession();
