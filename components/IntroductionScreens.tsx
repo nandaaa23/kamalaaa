@@ -8,6 +8,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
+import i18n from '../app/src/i18n/i18n';
 
 const { width } = Dimensions.get('window');
 
@@ -21,16 +22,19 @@ export const IntroductionScreens: React.FC<IntroductionScreensProps> = ({ onComp
 
   const slides = [
     {
-      text: "Kamala is here to hold space for you, every step of your postpartum journey.",
+      text:i18n.t('intro1'),
       background: Colors.mistyRose,
+      numberOfLines: 5,
     },
     {
-      text: "Whether you're healing, adjusting, or simply breathing through the day, we see you.",
+      text:i18n.t('intro2'),
       background: Colors.lightCyan,
+      numberOfLines: 5,
     },
     {
-      text: "Share in safe circles. Learn at your own pace. Be gently supported.",
+      text:i18n.t('intro3'),
       background: Colors.mintGreen,
+      numberOfLines: 5,
     },
   ];
 
@@ -65,7 +69,7 @@ export const IntroductionScreens: React.FC<IntroductionScreensProps> = ({ onComp
         style={styles.background}
       >
         <View style={styles.content}>
-          <Text style={styles.logo}>Kamala.</Text>
+          <Text style={styles.logo}> {i18n.t('welcome')}</Text>
 
           <View style={styles.slidesContainer}>
             <Animated.View style={[styles.slides, animatedStyle]}>
@@ -91,7 +95,7 @@ export const IntroductionScreens: React.FC<IntroductionScreensProps> = ({ onComp
 
           <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
             <Text style={styles.nextButtonText}>
-              {currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
+            {currentSlide === slides.length - 1 ? i18n.t('button1') : i18n.t('button2')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -119,7 +123,7 @@ const styles = StyleSheet.create({
     marginBottom: 60,
   },
   slidesContainer: {
-    height: 200,
+    height: 280,
     width: width,
     overflow: 'hidden',
     marginBottom: 40,
@@ -135,7 +139,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   slideText: {
-    fontSize: 18,
+    fontSize: 14,
     color: Colors.jet,
     textAlign: 'center',
     lineHeight: 28,
@@ -155,7 +159,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   nextButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#E8B4CB',
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 16,
@@ -163,6 +167,6 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.jet,
+    color: 'white',
   },
 });

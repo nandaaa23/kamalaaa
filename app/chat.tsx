@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../app/src/i18n/i18n';
 
 interface Message {
   id: string;
@@ -49,7 +50,7 @@ export default function ChatScreen() {
 
       const welcomeMessage: Message = {
         id: 'welcome_' + Date.now(),
-        text: 'Hello! I am Kamala, your compassionate companion. I am here to support you through your postpartum journey. Feel free to share what is on your mind in any language you are comfortable with.',
+        text:i18n.t('first'),
         sender: 'bot',
         timestamp: new Date().toLocaleTimeString(),
       };
@@ -105,14 +106,19 @@ export default function ChatScreen() {
         };
 
         setMessages(prev => [...prev, botMessage]);
-
         if (data.is_emergency) {
           Alert.alert(
-            'Emergency Support',
-            'I have detected you might be in crisis. Please consider reaching out to the emergency contacts I have shared immediately.',
-            [{ text: 'OK', style: 'default' }]
+            i18n.t('emergencyTitle'), 
+            i18n.t('emergencyMessage'), 
+            [
+              {
+                text: i18n.t('ok'), 
+                style: 'default',
+              },
+            ]
           );
         }
+        
       } else {
         throw new Error(data.error || 'Failed to get response');
       }
@@ -122,7 +128,7 @@ export default function ChatScreen() {
       
       const errorMessage: Message = {
         id: 'error_' + Date.now(),
-        text: `I am having trouble connecting right now. Please make sure your backend is running on ${API_BASE_URL}. You can also try restarting the app.`,
+        text:i18n.t('botr'),
         sender: 'bot',
         timestamp: new Date().toLocaleTimeString(),
         isError: true
@@ -157,7 +163,7 @@ export default function ChatScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Chat with Kamala</Text>
+          <Text style={styles.headerTitle}>{i18n.t('bottitle')}</Text>
           <TouchableOpacity style={styles.testButton} onPress={testConnection}>
             <Text style={styles.testButtonText}>Test</Text>
           </TouchableOpacity>
@@ -195,7 +201,7 @@ export default function ChatScreen() {
           ))}
           {isLoading && (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Kamala is typing...</Text>
+              <Text style={styles.loadingText}>{i18n.t('bottype')}</Text>
               <View style={styles.typingIndicator}>
                 <Text style={styles.dot}>●</Text>
                 <Text style={styles.dot}>●</Text>
@@ -211,7 +217,7 @@ export default function ChatScreen() {
             style={styles.textInput}
             value={inputText}
             onChangeText={setInputText}
-            placeholder="Share what's on your mind... (any language)"
+            placeholder={i18n.t('botsay')}
             multiline
             maxLength={500}
             onSubmitEditing={sendMessage}
@@ -222,7 +228,7 @@ export default function ChatScreen() {
             onPress={sendMessage}
             disabled={isLoading || !inputText.trim()}
           >
-            <Text style={styles.sendButtonText}>Send</Text>
+            <Text style={styles.sendButtonText}>{i18n.t('send')}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>

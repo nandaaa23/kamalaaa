@@ -4,6 +4,7 @@ import { Colors } from '../constants/Colors';
 import { MoodSelector } from '../components/MoodSelector';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
+import i18n from '../app/src/i18n/i18n';
 
 export const MoodLogScreen: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<'happy' | 'down' | 'overwhelmed' | 'numb' | null>(null);
@@ -18,43 +19,45 @@ export const MoodLogScreen: React.FC = () => {
       mood: mood,
     });
 
-    const messages = {
-      happy: "It's wonderful to see you feeling okay today. Keep nurturing these moments. 🌸",
-      down: "It's okay to feel down. You're being gentle with yourself by checking in. 💙",
-      overwhelmed: "Feeling overwhelmed is valid. Take a deep breath. You're doing your best. 🌊",
-      numb: "Sometimes numbness is protection. You're still showing up for yourself. 🤍",
-    };
-
-    Alert.alert('Thank you for sharing', messages[mood]);
+    Alert.alert(
+      i18n.t('thankYou'),
+      i18n.t(`moodMessages.${mood}`)
+    );
     
     const streak = getMoodStreak();
     if (streak > 1) {
       setTimeout(() => {
-        Alert.alert('Keep going!', `You've checked in ${streak} days in a row — you're showing up for yourself. 🌟`);
+        Alert.alert(
+          i18n.t('streakTitle'),
+          i18n.t('streakMessage', { streak })
+        );        
       }, 1500);
     }
   };
+
+  const streak = getMoodStreak();
 
   return (
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>Mood Log</Text>
+        <Text style={styles.title}>{i18n.t('mood')}</Text>
         <Text style={styles.subtitle}>
-          Your emotions are valid. Let's check in together.
-        </Text>
+         {i18n.t('moodemo')}</Text>
       </View>
 
       <MoodSelector onMoodSelect={handleMoodSelect} />
 
-      <View style={styles.streakInfo}>
-        <Text style={styles.streakText}>
-          Current streak: {getMoodStreak()} days
-        </Text>
-        <Text style={styles.streakSubtext}>
-          Small steps, big healing. Keep going.
-        </Text>
-      </View>
+      {streak >= 2 && (
+        <View style={styles.streakInfo}>
+          <Text style={styles.streakText}>
+            {i18n.t('streak')} {streak} {i18n.t('day')}
+          </Text>
+          <Text style={styles.streakSubtext}>
+            {i18n.t('mls')}
+          </Text>
+        </View>
+      )}
     </SafeAreaView>
   );
 };

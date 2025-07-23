@@ -1,7 +1,15 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+} from 'react-native';
 import { Colors } from '../constants/Colors';
 import { UserProfile } from '../types';
+import i18n from '../app/src/i18n/i18n';
 
 interface OnboardingScreenProps {
   onComplete: (profile: UserProfile) => void;
@@ -16,63 +24,52 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
   const steps = [
     {
-      title: 'How far along are you?',
+      title: i18n.t('journeyStageTitle'),
       type: 'single',
       key: 'journeyStage',
       options: [
-        '1–10 days',
-        '10–21 days',
-        '3–6 weeks',
-        '6–8 weeks',
-        '2–3 months',
-        'More than 3 months',
+        'days1to10',
+        'days10to21',
+        'weeks3to6',
+        'weeks6to8',
+        'months2to3',
+        'moreThan3Months',
       ],
     },
     {
-      title: 'How are you feeling lately?',
+      title: i18n.t('feelingQuestion'),
       type: 'multiple',
       key: 'currentFeelings',
-      options: ['Anxious', 'Lonely', 'Tired', 'Numb', 'Okay', 'Hopeful'],
+      options: ['anxious', 'lonely', 'tired', 'numb', 'okay', 'hopeful'],
     },
     {
-      title: 'Topics you\'re interested in',
+      title: i18n.t('topicsInterested'),
       type: 'multiple',
       key: 'interests',
       options: [
-        'Managing stress',
-        'Physical recovery',
-        'Breastfeeding support',
-        'Sleep & fatigue',
-        'Body image',
-        'Relationship changes',
-        'Mood swings & anxiety',
-        'Returning to work',
-        'Nutrition & self-care',
-        'Talking to family about emotions',
+        'stress',
+        'recovery',
+        'breastfeeding',
+        'sleep',
+        'bodyImage',
+        'relationships',
+        'mood',
+        'work',
+        'nutrition',
+        'familyTalk',
       ],
     },
     {
-      title: 'Preferred language',
+      title: i18n.t('languageTitle'),
       type: 'single',
       key: 'language',
-      options: [
-        'English',
-        'Hindi',
-        'Tamil',
-        'Telugu',
-        'Bengali',
-        'Kannada',
-        'Malayalam',
-        'Marathi',
-        'Gujarati',
-        'Punjabi',
-      ],
+     options: ['en', 'hi', 'ta', 'te', 'bn', 'kn', 'ml', 'mr', 'gu', 'pa'],
     },
     {
-      title: 'What should we call you?',
+      title: i18n.t('displayNameTitle'),
       type: 'text',
       key: 'displayName',
-      placeholder: 'Enter your name',
+      placeholder: i18n.t('displayNamePlaceholder'),
     },
   ];
 
@@ -80,13 +77,13 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
 
   const handleSelection = (value: string) => {
     if (currentStepData.type === 'single' || currentStepData.type === 'text') {
-      setProfile(prev => ({ ...prev, [currentStepData.key]: value }));
+      setProfile((prev) => ({ ...prev, [currentStepData.key]: value }));
     } else if (currentStepData.type === 'multiple') {
-      const currentValues = profile[currentStepData.key as keyof UserProfile] as string[] || [];
+      const currentValues = (profile[currentStepData.key as keyof UserProfile] as string[]) || [];
       const newValues = currentValues.includes(value)
-        ? currentValues.filter(v => v !== value)
+        ? currentValues.filter((v) => v !== value)
         : [...currentValues, value];
-      setProfile(prev => ({ ...prev, [currentStepData.key]: newValues }));
+      setProfile((prev) => ({ ...prev, [currentStepData.key]: newValues }));
     }
   };
 
@@ -112,7 +109,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         <TextInput
           style={styles.textInput}
           placeholder={currentStepData.placeholder}
-          value={profile[currentStepData.key as keyof UserProfile] as string || ''}
+          value={(profile[currentStepData.key as keyof UserProfile] as string) || ''}
           onChangeText={(text) => handleSelection(text)}
           placeholderTextColor={Colors.textSecondary}
         />
@@ -120,9 +117,10 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     }
 
     return currentStepData.options?.map((option, index) => {
-      const isSelected = currentStepData.type === 'multiple'
-        ? (profile[currentStepData.key as keyof UserProfile] as string[])?.includes(option)
-        : profile[currentStepData.key as keyof UserProfile] === option;
+      const isSelected =
+        currentStepData.type === 'multiple'
+          ? (profile[currentStepData.key as keyof UserProfile] as string[])?.includes(option)
+          : profile[currentStepData.key as keyof UserProfile] === option;
 
       return (
         <TouchableOpacity
@@ -131,7 +129,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
           onPress={() => handleSelection(option)}
         >
           <Text style={[styles.optionText, isSelected && styles.selectedOptionText]}>
-            {option}
+            {i18n.t(`${currentStepData.key}Options.${option}`)}
           </Text>
         </TouchableOpacity>
       );
@@ -141,17 +139,15 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Your Journey</Text>
+        <Text style={styles.title}>{i18n.t('yourJourney')}</Text>
         <Text style={styles.progress}>
-          {currentStep + 1} of {steps.length}
+          {currentStep + 1} {i18n.t('of')} {steps.length}
         </Text>
       </View>
 
       <ScrollView style={styles.content}>
         <Text style={styles.question}>{currentStepData.title}</Text>
-        <View style={styles.options}>
-          {renderOptions()}
-        </View>
+        <View style={styles.options}>{renderOptions()}</View>
       </ScrollView>
 
       <TouchableOpacity
@@ -160,7 +156,7 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
         disabled={!canProceed()}
       >
         <Text style={styles.nextButtonText}>
-          {currentStep === steps.length - 1 ? 'Complete' : 'Next'}
+          {currentStep === steps.length - 1 ? i18n.t('complete') : i18n.t('next')}
         </Text>
       </TouchableOpacity>
     </View>

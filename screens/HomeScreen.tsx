@@ -4,6 +4,8 @@ import { Colors } from '../constants/Colors';
 import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
+import i18n from '../app/src/i18n/i18n';
+
 
 const HomeScreen: React.FC = () => {
   const { user } = useAuth();
@@ -11,84 +13,87 @@ const HomeScreen: React.FC = () => {
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+    if (hour < 12) return i18n.t('morning');
+    if (hour < 17) return i18n.t('afternoon');
+    return i18n.t('evening');
   };
 
   const features = [
     {
-      title: 'Chat with Kamala',
-      description: 'Your AI companion for support',
+      title:i18n.t('chatwk'),
+      description:i18n.t('chatdesc'),
       icon: '💬',
       color: '#E8B4CB',
       screen: '/chat', 
       isLocked: false,
     },
     {
-      title: 'Mood Log',
-      description: 'Check in with your emotions daily',
+      title: i18n.t('mood'),
+      description:i18n.t('mooddesc'),
       icon: '💭',
       color: Colors.lightCyan,
       screen: '/MoodLogScreen',
       isLocked: false,
     },
     {
-      title: 'Reflections',
-      description: 'A private space for your thoughts',
+      title: i18n.t('refl'),
+      description:  i18n.t('refl'),
       icon: '📝',
       color: Colors.mistyRose,
       screen: '/ReflectionsScreen', 
       isLocked: user?.isGuest,
     },
     {
-      title: 'Secret Circle',
-      description: 'Share anonymously with others',
+      title:  i18n.t('sc'),
+      description:i18n.t('sc'),
       icon: '🌸',
       color: Colors.pinkLavender1,
       screen: '/SecretCircleScreen', 
       isLocked: user?.isGuest,
     },
     {
-      title: 'Breathe & Be',
-      description: 'Gentle practices for calm',
+      title:i18n.t('bab'),
+      description:i18n.t('babdesc'),
       icon: '🫧',
       color: Colors.mintGreen,
       screen: '/BreatheAndBeScreen', 
       isLocked: false,
     },
     {
-      title: 'Learn & Heal',
-      description: 'Resources for recovery',
+      title:i18n.t('lnh'),
+      description: 'lnhdesc',
       icon: '🌱',
       color: Colors.honeydew,
       screen: '/LearnAndHealScreen', 
       isLocked: user?.isGuest,
     },
     {
-      title: 'Listen-In',
-      description: 'Podcasts and stories',
+      title:i18n.t('pod'),
+      description: i18n.t('poddesc'),
       icon: '🎧',
       color: Colors.linen,
       screen: '/ListenInScreen', 
       isLocked: user?.isGuest,
     },
   ];
-
+  console.log('Current Language:', i18n.locale);
+  console.log('Translated Title:', i18n.t('homeTitle'));
+  
   const handleFeaturePress = (feature: any) => {
     console.log('🎯 Feature pressed:', feature.title, feature.screen);
     
     if (feature.isLocked) {
       Alert.alert(
-        'Premium Feature',
-        'This feature is available for registered users. Would you like to create an account?',
+        i18n.t('pod'),
+        i18n.t('poddec'),
+ 
         [
           {
-            text: 'Not Now',
+            text:  i18n.t('NotNow'),
             style: 'cancel',
           },
           {
-            text: 'Sign Up',
+            text:i18n.t('signup'),
             onPress: () => {
               console.log('Navigate to signup');
             },
@@ -118,15 +123,19 @@ const HomeScreen: React.FC = () => {
         console.log('✅ Navigation executed');
       } else {
         console.error('❌ Screen not found:', feature.screen);
-        Alert.alert('Coming Soon', `${feature.title} will be available soon!`);
+        Alert.alert(i18n.t('comingsoon'), `${feature.title}, ${i18n.t('soon')}`);
       }
     } catch (error) {
       console.error('❌ Navigation error:', error);
       Alert.alert(
-        'Navigation Error', 
-        `Unable to open ${feature.title}. Error: ${(error as Error)?.message || 'Unknown error'}`
+        i18n.t('navigationErrorTitle'),
+        i18n.t('navigationErrorMessage', {
+          title: feature.title,
+          error: (error as Error)?.message || i18n.t('unknownError')
+        })
       );
     }
+    
   };
 
   return (
@@ -140,9 +149,9 @@ const HomeScreen: React.FC = () => {
           <Text style={styles.greeting}>
             {getGreeting()}, {user?.profile?.displayName || user?.name || 'friend'}.
           </Text>
-          <Text style={styles.subGreeting}>How are you feeling today?</Text>
+          <Text style={styles.subGreeting}>{i18n.t('hft')}</Text>
           <Text style={styles.description}>
-            This space is yours to check in, rest, and reconnect.
+          {i18n.t('subt')}
           </Text>
           
       

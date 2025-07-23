@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '../constants/Colors';
+import i18n from '../app/src/i18n/i18n';
 
 interface MoodSelectorProps {
   onMoodSelect: (mood: 'happy' | 'down' | 'overwhelmed' | 'numb') => void;
@@ -8,15 +9,15 @@ interface MoodSelectorProps {
 
 export const MoodSelector: React.FC<MoodSelectorProps> = ({ onMoodSelect }) => {
   const moods = [
-    { key: 'happy', emoji: '😊', label: 'Okay', color: Colors.moodHappy },
-    { key: 'down', emoji: '😞', label: 'Down', color: Colors.moodDown },
-    { key: 'overwhelmed', emoji: '😤', label: 'Overwhelmed', color: Colors.moodOverwhelmed },
-    { key: 'numb', emoji: '💭', label: 'Numb', color: Colors.moodNumb },
+    { key: 'happy', emoji: '😊', label: i18n.t('moodLabels.happy'), color: Colors.moodHappy },
+    { key: 'down', emoji: '😞', label: i18n.t('moodLabels.down'), color: Colors.moodDown },
+    { key: 'overwhelmed', emoji: '😤', label: i18n.t('moodLabels.overwhelmed'), color: Colors.moodOverwhelmed },
+    { key: 'numb', emoji: '💭', label: i18n.t('moodLabels.numb'), color: Colors.moodNumb },
   ];
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>How are you feeling today?</Text>
+      <Text style={styles.title}>{i18n.t('moodQuestion')}</Text>
       <View style={styles.moodGrid}>
         {moods.map((mood) => (
           <TouchableOpacity

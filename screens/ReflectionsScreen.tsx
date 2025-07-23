@@ -4,6 +4,7 @@ import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import i18n from '../app/src/i18n/i18n';
 
 export const ReflectionsScreen: React.FC = () => {
   const [reflection, setReflection] = useState('');
@@ -17,12 +18,10 @@ export const ReflectionsScreen: React.FC = () => {
         <BackButton />
         <View style={styles.lockedScreen}>
           <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to unlock journaling</Text>
-          <Text style={styles.lockDescription}>
-            A private space for your thoughts — no one sees this unless you choose.
-          </Text>
+          <Text style={styles.lockTitle}>{i18n.t('lockJournalTitle')}</Text>
+           <Text style={styles.lockDescription}>{i18n.t('lockJournalDescription')}</Text>
           <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
+            <Text style={styles.joinButtonText}>{i18n.t('joinKamala')}</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -40,8 +39,7 @@ export const ReflectionsScreen: React.FC = () => {
       content: reflection,
       mood: selectedMood,
     });
-
-    Alert.alert('Saved', 'Thank you for sharing with yourself.');
+    Alert.alert(i18n.t('journalSavedTitle'), i18n.t('journalSavedMessage'));
     setReflection('');
     setSelectedMood('');
   };
@@ -50,15 +48,13 @@ export const ReflectionsScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>Reflections</Text>
-        <Text style={styles.subtitle}>
-          A private space for your thoughts — no one sees this unless you choose.
-        </Text>
+      <Text style={styles.title}>{i18n.t('reflectionsTitle')}</Text>
+<Text style={styles.subtitle}>{i18n.t('reflectionsSubtitle')}</Text>
       </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.writingSection}>
-          <Text style={styles.promptText}>How are you feeling today?</Text>
+        <Text style={styles.promptText}>{i18n.t('hft')}</Text>
           
           <View style={styles.moodSelector}>
             {moods.map((mood, index) => (
@@ -77,7 +73,7 @@ export const ReflectionsScreen: React.FC = () => {
 
           <TextInput
             style={styles.textInput}
-            placeholder="What's on your mind today? Let your thoughts flow..."
+            placeholder={i18n.t('journalPlaceholder')}
             placeholderTextColor={Colors.textSecondary}
             value={reflection}
             onChangeText={setReflection}
@@ -90,12 +86,12 @@ export const ReflectionsScreen: React.FC = () => {
             onPress={handleSave}
             disabled={!reflection.trim()}
           >
-            <Text style={styles.saveButtonText}>Save Reflection</Text>
+          <Text style={styles.saveButtonText}>{i18n.t('saveReflection')}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.pastReflections}>
-          <Text style={styles.sectionTitle}>Your Recent Reflections</Text>
+        <Text style={styles.sectionTitle}>{i18n.t('recentReflections')}</Text>
           {reflections.slice(-5).reverse().map((item) => (
             <View key={item.id} style={styles.reflectionCard}>
               <View style={styles.reflectionHeader}>
@@ -109,8 +105,8 @@ export const ReflectionsScreen: React.FC = () => {
           ))}
           {reflections.length === 0 && (
             <Text style={styles.emptyText}>
-              Your reflections will appear here. Start writing to begin your journey.
-            </Text>
+            {i18n.t('reflectionsEmpty')}
+          </Text>          
           )}
         </View>
       </ScrollView>

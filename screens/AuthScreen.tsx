@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import i18n from '../app/src/i18n/i18n';
 
 interface AuthScreenProps {
   onComplete?: (user?: User) => void;
@@ -30,7 +31,8 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
 
   const handleLogin = async () => {
     if (!name.trim() || !email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(i18n.t('errorTitle'), i18n.t('fillAllFields'));
+
       return;
     }
 
@@ -38,8 +40,11 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
     
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success!', `Welcome back, ${name.trim()}!`, [
-        { text: 'OK', onPress: () => {
+      Alert.alert(
+        i18n.t('success'),
+        `${i18n.t('welcome')}, ${name.trim()}!`,
+        [
+        { text: i18n.t('ok'), onPress: () => {
           onClose();
           onSuccess({
             name: name.trim(),
@@ -57,13 +62,13 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.closeButton}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Login</Text>
+          <Text style={styles.modalTitle}>{i18n.t('login')}</Text>
         </View>
 
         <View style={styles.modalContent}>
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
+            placeholder={i18n.t('yourName')}
             value={name}
             onChangeText={setName}
             editable={!isLoading}
@@ -72,7 +77,7 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={i18n.t('email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -82,7 +87,7 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder={i18n.t('passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -95,12 +100,12 @@ const LoginModal = ({ visible, onClose, onRegister, onSuccess }: {
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? 'Logging in...' : 'Login'}
+            {isLoading ? i18n.t('loggingIn') : i18n.t('login')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onRegister} disabled={isLoading}>
-            <Text style={styles.linkText}>Don't have an account? Register</Text>
+          <Text style={styles.linkText}>{i18n.t('noAccountRegister')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -121,17 +126,17 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
 
   const handleRegister = async () => {
     if (!name.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert(i18n.t('errorTitle'), i18n.t('fillAllFields'));
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert(i18n.t('errorTitle'), i18n.t('passwordMismatch'));
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password must be at least 6 characters');
+      Alert.alert(i18n.t('errorTitle'), i18n.t('passwordTooShort'));
       return;
     }
 
@@ -139,9 +144,12 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
     
     setTimeout(() => {
       setIsLoading(false);
-      Alert.alert('Success!', `Account created for ${name.trim()}! Please login with your credentials.`, [
+      Alert.alert(
+        i18n.t('successTitle'),
+        i18n.t('accountCreated', { name: name.trim() }),
+        [
         {
-          text: 'OK',
+          text: i18n.t('ok'),
           onPress: () => {
             setName('');
             setEmail('');
@@ -162,13 +170,13 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.closeButton}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.modalTitle}>Create Account</Text>
+          <Text style={styles.modalTitle}>{i18n.t('createAccount')}</Text>
         </View>
 
         <View style={styles.modalContent}>
           <TextInput
             style={styles.input}
-            placeholder="Your Name"
+            placeholder={i18n.t('yourName')}
             value={name}
             onChangeText={setName}
             editable={!isLoading}
@@ -177,7 +185,7 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
 
           <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder={i18n.t('email')}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -187,7 +195,7 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
 
           <TextInput
             style={styles.input}
-            placeholder="Password (min 6 characters)"
+            placeholder={i18n.t('passwordPlaceholder')}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -196,7 +204,7 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
 
           <TextInput
             style={styles.input}
-            placeholder="Confirm Password"
+            placeholder={i18n.t('confirmPassword')}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             secureTextEntry
@@ -209,12 +217,12 @@ const RegisterModal = ({ visible, onClose, onLogin }: {
             disabled={isLoading}
           >
             <Text style={styles.buttonText}>
-              {isLoading ? 'Creating Account...' : 'Register'}
+            {isLoading ? i18n.t('creatingAccount') : i18n.t('register')}
             </Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={onLogin} disabled={isLoading}>
-            <Text style={styles.linkText}>Already have an account? Login</Text>
+          <Text style={styles.linkText}>{i18n.t('alreadyHaveAccount')}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -302,13 +310,14 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.logo}>Kamala.</Text>
-        <Text style={styles.tagline}>For mothers, postpartum.</Text>
+        <Text style={styles.logo}>{i18n.t('welcome')}</Text>
+        <Text style={styles.tagline}>{i18n.t('subtitle')}</Text>
 
         <View style={styles.welcomeSection}>
-          <Text style={styles.welcomeText}>
-            Welcome to your safe space for healing, connection, and gentle support.
-          </Text>
+        <Text style={styles.welcomeText}>
+  {i18n.t('welcomeMessage')}
+</Text>
+
         </View>
 
         <View style={styles.authButtons}>
@@ -316,21 +325,20 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onComplete }) => {
             style={[styles.authButton, { backgroundColor: '#E8B4CB' }]}
             onPress={handleLogin}
           >
-            <Text style={styles.authButtonText}>Login</Text>
+            <Text style={styles.authButtonText}>{i18n.t('login')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.authButton, { backgroundColor: '#E8B4CB' }]}
             onPress={handleRegister}
           >
-            <Text style={styles.authButtonText}>Register</Text>
+          <Text style={styles.authButtonText}>{i18n.t('register')}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={styles.exploreButton}
             onPress={handleExplore}
-          >
-            <Text style={styles.exploreButtonText}>Explore Kamala</Text>
+          ><Text style={styles.exploreButtonText}>{i18n.t('exploreKamala')}</Text>
           </TouchableOpacity>
         </View>
       </View>

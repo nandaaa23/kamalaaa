@@ -5,6 +5,7 @@ import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
+import i18n from '../app/src/i18n/i18n';
 
 export const SecretCircleScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'share' | 'read' | 'my-replies'>('read');
@@ -21,16 +22,10 @@ export const SecretCircleScreen: React.FC = () => {
     return (
       <SafeAreaView style={styles.container}>
         <BackButton />
-        <View style={styles.lockedScreen}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to access Secret Circle</Text>
-          <Text style={styles.lockDescription}>
-            Let go of your heaviest thoughts — no names, no judgment. Anonymous sharing and replies.
-          </Text>
-          <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.lockTitle}>{i18n.t('joinToAccessCircle')}</Text>
+<Text style={styles.lockDescription}>{i18n.t('anonymousSharingMessage')}</Text>
+<Text style={styles.joinButtonText}>{i18n.t('joinKamala')}</Text>
+
       </SafeAreaView>
     );
   }
@@ -49,16 +44,14 @@ export const SecretCircleScreen: React.FC = () => {
       withTiming(-50, { duration: 1000 }),
       withTiming(0, { duration: 0 })
     );
-  
-    Alert.alert('Shared', 'Thank you for trusting Kamala. You\'re not alone.');
+    Alert.alert(i18n.t('sharedTitle'), i18n.t('sharedMessage'));
     setSecretText('');
     setActiveTab('read');
   };
   
   const handleReply = (secretId: string) => {
     if (!replyText.trim()) return;
-    
-    Alert.alert('Reply Sent', 'Your supportive words have been shared.');
+    Alert.alert(i18n.t('replySentTitle'), i18n.t('replySentMessage'));
     setReplyText('');
     setReplyingTo(null);
   };
@@ -68,20 +61,19 @@ export const SecretCircleScreen: React.FC = () => {
   }));
 
   const tabs = [
-    { key: 'read', label: 'Read Secrets', icon: '👁' },
-    { key: 'share', label: 'Share Secret', icon: '✍' },
-    { key: 'my-replies', label: 'My Replies', icon: '📩' },
+    { key: 'read', label: i18n.t('tabReadSecrets'), icon: '👁' },
+    { key: 'share', label: i18n.t('tabShareSecret'), icon: '✍' },
+    { key: 'my-replies', label: i18n.t('tabMyReplies'), icon: '📩' },
   ];
-
+  
   return (
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>Secret Circle</Text>
-        <Text style={styles.subtitle}>
-          Let go of your heaviest thoughts — no names, no judgment.
-        </Text>
-      </View>
+  <Text style={styles.title}>{i18n.t('secretCircleTitle')}</Text>
+  <Text style={styles.subtitle}>{i18n.t('secretCircleSubtitle')}</Text>
+</View>
+
 
       <View style={styles.tabs}>
         {tabs.map((tab) => (
@@ -102,12 +94,12 @@ export const SecretCircleScreen: React.FC = () => {
         {activeTab === 'share' && (
           <Animated.View style={[styles.shareSection, animatedStyle]}>
             <Text style={styles.sharePrompt}>
-              What would you like to release today?
-            </Text>
-            
+              {i18n.t('sharePrompt')}
+             </Text>
+
             <TextInput
               style={styles.secretInput}
-              placeholder="Share what's weighing on your heart..."
+              placeholder={i18n.t('sharePlaceholder')}
               placeholderTextColor={Colors.textSecondary}
               value={secretText}
               onChangeText={setSecretText}
@@ -123,7 +115,7 @@ export const SecretCircleScreen: React.FC = () => {
                 <View style={[styles.checkbox, allowReplies && styles.checkedBox]}>
                   {allowReplies && <Text style={styles.checkmark}>✓</Text>}
                 </View>
-                <Text style={styles.toggleText}>Allow supportive replies</Text>
+                <Text style={styles.toggleText}>{i18n.t('allowReplies')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -132,7 +124,7 @@ export const SecretCircleScreen: React.FC = () => {
               onPress={handleShareSecret}
               disabled={!secretText.trim()}
             >
-              <Text style={styles.shareButtonText}>Release This Secret</Text>
+              <Text style={styles.shareButtonText}>{i18n.t('releaseSecret')}</Text>
             </TouchableOpacity>
           </Animated.View>
         )}
@@ -142,8 +134,9 @@ export const SecretCircleScreen: React.FC = () => {
             {secrets.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>
-                  No secrets shared yet. Be the first to trust this circle.
+                 {i18n.t('noSecretsYet')}
                 </Text>
+ 
               </View>
             ) : (
               secrets.map((secret) => (
@@ -159,8 +152,10 @@ export const SecretCircleScreen: React.FC = () => {
                         onPress={() => setReplyingTo(secret.id)}
                       >
                         <Text style={styles.replyButtonText}>
-                          💙 Send Support ({secret.replies.length})
-                        </Text>
+                          💙 {i18n.t('sendSupport', { count: secret.replies.length })}
+                        
+                           </Text>
+
                       </TouchableOpacity>
                     )}
                   </View>
@@ -169,7 +164,7 @@ export const SecretCircleScreen: React.FC = () => {
                     <View style={styles.replySection}>
                       <TextInput
                         style={styles.replyInput}
-                        placeholder="Send a supportive message..."
+                        placeholder={i18n.t('supportivePlaceholder')}
                         placeholderTextColor={Colors.textSecondary}
                         value={replyText}
                         onChangeText={setReplyText}
@@ -180,14 +175,14 @@ export const SecretCircleScreen: React.FC = () => {
                           style={styles.cancelReply}
                           onPress={() => setReplyingTo(null)}
                         >
-                          <Text style={styles.cancelReplyText}>Cancel</Text>
+                         <Text style={styles.cancelReplyText}>{i18n.t('cancel')}</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={[styles.sendReply, !replyText.trim() && styles.disabledButton]}
                           onPress={() => handleReply(secret.id)}
                           disabled={!replyText.trim()}
                         >
-                          <Text style={styles.sendReplyText}>Send</Text>
+                         <Text style={styles.sendReplyText}>{i18n.t('send')}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -200,11 +195,11 @@ export const SecretCircleScreen: React.FC = () => {
 
         {activeTab === 'my-replies' && (
           <View style={styles.myRepliesSection}>
-            <Text style={styles.myRepliesTitle}>Your Secrets & Replies Received</Text>
+            <Text style={styles.myRepliesTitle}>{i18n.t('yourSecretsAndReplies')}</Text>
             {secrets.filter(s => s.replies.length > 0).length === 0 ? (
               <Text style={styles.emptyText}>
-                No replies yet. Share a secret to start receiving support.
-              </Text>
+              {i18n.t('noRepliesYet')}
+            </Text>            
             ) : (
               secrets
                 .filter(s => s.replies.length > 0)
@@ -212,8 +207,9 @@ export const SecretCircleScreen: React.FC = () => {
                   <View key={secret.id} style={styles.mySecretCard}>
                     <Text style={styles.mySecretContent}>{secret.content}</Text>
                     <Text style={styles.repliesHeader}>
-                      {secret.replies.length} supportive replies:
-                    </Text>
+  {i18n.t('supportiveReplies', { count: secret.replies.length })}
+</Text>
+
                     {secret.replies.map((reply) => (
                       <View key={reply.id} style={styles.replyCard}>
                         <Text style={styles.replyContent}>{reply.content}</Text>
