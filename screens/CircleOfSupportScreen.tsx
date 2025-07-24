@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 import { Colors } from '../constants/Colors';
 
-const socket = io('http://192.168.137.82:3000');
+const socket = io('http://192.168.1.3:3000');
 
 type User = {
   id: string;

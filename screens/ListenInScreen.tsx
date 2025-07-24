@@ -16,7 +16,7 @@ const ListenInScreen = () => {
   useEffect(() => {
     const fetchPodcasts = async () => {
       try {
-        const response = await fetch('http://192.168.137.82:3001/spotify/podcasts');
+        const response = await fetch('http://192.168.1.3:3001/spotify/podcasts');
         const data = await response.json();
         setPodcasts(data);
       } catch (error) {

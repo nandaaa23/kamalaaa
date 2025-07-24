@@ -162,8 +162,8 @@ const RegisterModal = ({ visible, onClose, onSwitch, onRegisterSuccess }: any) =
           <TextInput
             style={styles.input}
             placeholder={i18n.t('confirmPassword')}
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            value={confirm}
+            onChangeText={setConfirm}
             secureTextEntry
             editable={!isLoading}
           />
