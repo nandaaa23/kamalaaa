@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "202092173655-tkca4lpftb83klgu037uitietr9cauqg.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.kamala.postpartum",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
           "client_id": "202092173655-tpvfjko4r2cc4odqf47kdqa0j5rkcr5t.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -6,9 +6,9 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withDelay,
-  Easing,
   FadeOut,
-  runOnJS,
+  Easing,
+  runOnJS
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import WaveImage from '../assets/images/wave.png';
@@ -27,20 +27,24 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   const containerOpacity = useSharedValue(1);
 
   useEffect(() => {
-    // Animate title
-    titleOpacity.value = withTiming(1, {
+      titleOpacity.value = withTiming(1, {
       duration: 800,
       easing: Easing.out(Easing.ease),
     });
-
-    // Animate subtitle after title
-    subtitleOpacity.value = withDelay(
+      subtitleOpacity.value = withDelay(
       500,
       withTiming(1, {
         duration: 1000,
         easing: Easing.out(Easing.ease),
       })
     );
+
+    setTimeout(() => {
+      waveTranslateY.value = withTiming(height + height / 3, {
+        duration: 1000,
+        easing: Easing.inOut(Easing.ease),
+      });
+    }, 3200);
 
     // Wave rises after 3.2 seconds
     setTimeout(() => {
@@ -57,7 +61,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         easing: Easing.ease,
       }, (finished) => {
         if (finished) {
-          runOnJS(onComplete)(); // navigate only after fade-out
+          runOnJS(onComplete)(); 
         }
       });
     }, 4200);

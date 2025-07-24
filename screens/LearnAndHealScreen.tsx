@@ -9,24 +9,6 @@ export const LearnAndHealScreen: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const { user } = useAuth();
 
-  if (user?.isGuest) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <BackButton />
-        <View style={styles.lockedScreen}>
-          <Text style={styles.lockIcon}>🔒</Text>
-          <Text style={styles.lockTitle}>Join Kamala to Learn & Heal</Text>
-          <Text style={styles.lockDescription}>
-            Access expert articles, videos, and resources on emotional recovery, nutrition, relationships, and stress management.
-          </Text>
-          <TouchableOpacity style={styles.joinButton}>
-            <Text style={styles.joinButtonText}>Join Kamala</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   const categories = [
     { key: 'all', label: 'All Topics', icon: '📚' },
     { key: 'emotional', label: 'Emotional Recovery', icon: '💙' },
@@ -44,7 +26,7 @@ export const LearnAndHealScreen: React.FC = () => {
       type: 'article',
       duration: '8 min read',
       author: 'Dr. Priya Sharma',
-      description: 'Learn about the signs, symptoms, and treatment options for postpartum depression.',
+      description: '',
       color: Colors.mistyRose,
     },
     {

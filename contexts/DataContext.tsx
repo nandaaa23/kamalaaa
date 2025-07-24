@@ -13,6 +13,8 @@ import {
   HeartbeatMoment,
   ForumPost,
 } from '../types';
+import { useFrameworkReady } from '../hooks/useFrameworkReady';
+import { setDoc,getDoc} from 'firebase/firestore';
 
 type Podcast = {
   id: string;

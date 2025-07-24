@@ -18,18 +18,6 @@ export const SecretCircleScreen: React.FC = () => {
 
   const floatAnimation = useSharedValue(0);
 
-  if (user?.isGuest) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <BackButton />
-        <Text style={styles.lockTitle}>{i18n.t('joinToAccessCircle')}</Text>
-<Text style={styles.lockDescription}>{i18n.t('anonymousSharingMessage')}</Text>
-<Text style={styles.joinButtonText}>{i18n.t('joinKamala')}</Text>
-
-      </SafeAreaView>
-    );
-  }
-
   const handleShareSecret = async () => {
     if (!secretText.trim()) return;
   

@@ -95,6 +95,7 @@ const HomeScreen: React.FC = () => {
           {
             text:i18n.t('signup'),
             onPress: () => {
+              router.push('/auth');
               console.log('Navigate to signup');
             },
           },

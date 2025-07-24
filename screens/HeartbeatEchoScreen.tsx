@@ -49,7 +49,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
   
   const { addHeartbeatMoment, heartbeatMoments } = useData();
   
-  // Animation values
   const motherScale = useSharedValue(1);
   const babyScale = useSharedValue(1);
   const motherHaloOpacity = useSharedValue(0);
@@ -78,7 +77,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
     setTapTimestamps(newTimestamps);
     setTapCount(tapCount + 1);
 
-    // Pulse animation on tap
     const pulseValue = phase === 'baby' ? babyScale : motherScale;
     pulseValue.value = withSequence(
       withTiming(1.2, { duration: 150 }),
@@ -86,7 +84,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
     );
 
     if (tapCount === 3) {
-      // Calculate average interval
       const intervals = [];
       for (let i = 1; i < newTimestamps.length; i++) {
         intervals.push(newTimestamps[i] - newTimestamps[i - 1]);
@@ -110,7 +107,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
   };
 
   const startVisualization = () => {
-    // Start heartbeat animations
     motherScale.value = withRepeat(
       withSequence(
         withTiming(1.1, { duration: motherInterval * 0.3, easing: Easing.inOut(Easing.ease) }),
@@ -127,7 +123,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
       -1
     );
 
-    // Halo animations
     motherHaloOpacity.value = withRepeat(
       withSequence(
         withTiming(0.6, { duration: motherInterval * 0.3 }),
@@ -144,7 +139,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
       -1
     );
 
-    // End visualization after 30 seconds
     setTimeout(() => {
       setPhase('end');
     }, 30000);
@@ -166,23 +160,20 @@ export const HeartbeatEchoScreen: React.FC = () => {
   };
 
   const saveSession = async () => {
-    //const title = Heartbeat Echo - ${new Date().toLocaleDateString()};
     const title = `Heartbeat Echo - ${new Date().toLocaleDateString()}`;
     await addHeartbeatMoment({
       date: new Date().toISOString(),
-      babyHeartbeat: tapTimestamps, // Using the correct property name
-      motherHeartbeat: tapTimestamps, // Using the correct property name
+      babyHeartbeat: tapTimestamps, 
+      motherHeartbeat: tapTimestamps,
       title,
     });
     
-    // Show confirmation with animation
     contentOpacity.value = withSequence(
       withTiming(0.5, { duration: 200 }),
       withTiming(1, { duration: 200 })
     );
   };
 
-  // Animated styles
   const motherOrbStyle = useAnimatedStyle(() => ({
     transform: [{ scale: motherScale.value }],
   }));
@@ -340,7 +331,6 @@ export const HeartbeatEchoScreen: React.FC = () => {
     );
   }
 
-  // Calibration phases
   return (
     <View style={styles.container}>
       <LinearGradient

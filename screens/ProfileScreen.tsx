@@ -32,6 +32,7 @@ import {
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../contexts/AuthContext';
 
 interface UserInfo {
   name: string;
@@ -50,8 +51,12 @@ interface Section {
   data: SectionItem[];
 }
 
+
+
+
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
+  const { logout } = useAuth();
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
   const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
@@ -237,30 +242,20 @@ const handleLogout = (): void => {
         onPress: async () => {
           try {
             console.log('🚪 Starting logout process...');
-
-            await AsyncStorage.clear();
-            console.log('🧹 Storage cleared');
-  
-            setTimeout(() => {
-              try {
-                router.dismissAll?.();
-                router.replace('/');
-              } catch (navError) {
-                console.log('Navigation handled, app will restart');
-              }
-            }, 100);
-            
+            await logout(); 
+            console.log('🔒 Firebase logout done');
+            router.replace('/auth'); 
             console.log('✅ Logout completed');
-            
           } catch (error) {
             console.error('❌ Logout error:', error);
-            console.log('Logout completed despite error');
           }
         },
       },
     ]
   );
 };
+
+
 
   const sections: Section[] = [
     {
