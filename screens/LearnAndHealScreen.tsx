@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Tex
 import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useAuth } from '../contexts/AuthContext';
+import i18n from '../src/i18n/i18n';
 
 export const LearnAndHealScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -10,18 +11,17 @@ export const LearnAndHealScreen: React.FC = () => {
   const { user } = useAuth();
 
   const categories = [
-    { key: 'all', label: 'All Topics', icon: '📚' },
-    { key: 'emotional', label: 'Emotional Recovery', icon: '💙' },
-    { key: 'nutrition', label: 'Nutrition', icon: '🥗' },
-    { key: 'relationships', label: 'Relationships', icon: '💕' },
-    { key: 'stress', label: 'Stress Management', icon: '🧘‍♀️' },
-    { key: 'physical', label: 'Physical Recovery', icon: '🌱' },
-  ];
-
+    { key: 'all', label: i18n.t('category_allTopics'), icon: '📚' },
+    { key: 'emotional', label: i18n.t('category_emotionalRecovery'), icon: '💙' },
+    { key: 'nutrition', label: i18n.t('category_nutrition'), icon: '🥗' },
+    { key: 'relationships', label: i18n.t('category_relationships'), icon: '💕' },
+    { key: 'stress', label: i18n.t('category_stressManagement'), icon: '🧘‍♀️' },
+    { key: 'physical', label: i18n.t('category_physicalRecovery'), icon: '🌱' },
+  ];  
   const articles = [
     {
       id: '1',
-      title: 'Understanding Postpartum Depression: You\'re Not Alone',
+      title: i18n.t('article_title_1'),
       category: 'emotional',
       type: 'article',
       duration: '8 min read',
@@ -31,55 +31,56 @@ export const LearnAndHealScreen: React.FC = () => {
     },
     {
       id: '2',
-      title: 'Nutrition for New Mothers: Healing from Within',
+      title: i18n.t('article_title_2'),
       category: 'nutrition',
       type: 'video',
       duration: '12 min watch',
       author: 'Nutritionist Meera Patel',
-      description: 'Essential nutrients and meal planning for postpartum recovery.',
+      description: i18n.t('article_desc_2'),
       color: Colors.honeydew,
     },
     {
       id: '3',
-      title: 'Communicating with Your Partner During Postpartum',
+      title: i18n.t('article_title_3'),
       category: 'relationships',
       type: 'article',
       duration: '6 min read',
       author: 'Counselor Anjali Gupta',
-      description: 'How to maintain healthy communication when everything feels overwhelming.',
+      description: i18n.t('article_desc_3'),
       color: Colors.lightCyan,
     },
     {
       id: '4',
-      title: 'Breathing Techniques for Anxiety Relief',
+      title: i18n.t('article_title_4'),
       category: 'stress',
       type: 'video',
       duration: '5 min practice',
       author: 'Yoga Instructor Kavya Nair',
-      description: 'Simple breathing exercises you can do anywhere, anytime.',
+      description: i18n.t('article_desc_4'),
       color: Colors.mintGreen,
     },
     {
       id: '5',
-      title: 'Physical Recovery: What to Expect Week by Week',
+      title: i18n.t('article_title_5'),
       category: 'physical',
       type: 'article',
       duration: '10 min read',
       author: 'Dr. Sunita Reddy',
-      description: 'A comprehensive guide to physical healing after childbirth.',
+      description: i18n.t('article_desc_5'),
       color: Colors.pinkLavender1,
     },
     {
       id: '6',
-      title: 'Building Your Support Network',
+      title: i18n.t('article_title_6'),
       category: 'emotional',
       type: 'article',
       duration: '7 min read',
       author: 'Therapist Ritu Jain',
-      description: 'How to identify and nurture relationships that support your healing.',
+      description: i18n.t('article_desc_6'),
       color: Colors.linen,
     },
   ];
+  
 
   const filteredArticles = articles.filter(article => {
     const matchesSearch = article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,16 +93,16 @@ export const LearnAndHealScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>Learn & Heal</Text>
+      <Text style={styles.title}>{i18n.t('lnh')}</Text>
         <Text style={styles.subtitle}>
-          Expert guidance for your recovery journey
+            {i18n.t('recoverySubtitle')}
         </Text>
       </View>
 
       <View style={styles.searchSection}>
         <TextInput
           style={styles.searchInput}
-          placeholder="Search articles, videos..."
+          placeholder={i18n.t('searchPlaceholder')}
           placeholderTextColor={Colors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -135,17 +136,19 @@ export const LearnAndHealScreen: React.FC = () => {
         {filteredArticles.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>
-              No articles found. Try adjusting your search or category.
-            </Text>
+           {i18n.t('noArticlesFound')}
+           </Text>
+
           </View>
         ) : (
           filteredArticles.map((article) => (
             <TouchableOpacity key={article.id} style={[styles.articleCard, { backgroundColor: article.color }]}>
               <View style={styles.articleHeader}>
                 <View style={styles.articleMeta}>
-                  <Text style={styles.articleType}>
-                    {article.type === 'video' ? '🎥' : '📄'} {article.type.toUpperCase()}
-                  </Text>
+                <Text style={styles.articleType}>
+                 {article.type === 'video' ? '🎥' : '📄'} {i18n.t(article.type)}
+               </Text>
+
                   <Text style={styles.articleDuration}>{article.duration}</Text>
                 </View>
               </View>
@@ -157,7 +160,7 @@ export const LearnAndHealScreen: React.FC = () => {
                 <Text style={styles.articleAuthor}>By {article.author}</Text>
                 <TouchableOpacity style={styles.readButton}>
                   <Text style={styles.readButtonText}>
-                    {article.type === 'video' ? 'Watch' : 'Read'} →
+                  {article.type === 'video' ? i18n.t('watch') : i18n.t('read')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -219,6 +222,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.jet,
     marginBottom: 8,
+    marginTop:38,
   },
   subtitle: {
     fontSize: 16,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Colors } from '../constants/Colors';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 interface MoodSelectorProps {
   onMoodSelect: (mood: 'happy' | 'down' | 'overwhelmed' | 'numb') => void;

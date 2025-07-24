@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
-
+import i18n from '../src/i18n/i18n';
 interface Podcast {
   id: string;
   name: string;
@@ -44,10 +44,11 @@ const ListenInScreen = () => {
   return (
     <>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>🎧 Listen In</Text>
+        <Text style={styles.headerTitle}>🎧 {i18n.t('pod')}</Text>
         <Text style={styles.headerSubtitle}>
-          Curated podcasts for moms — mental health, healing, lifestyle, and more.
-        </Text>
+          {i18n.t('podcastSubtitle')}
+           </Text>
+
       </View>
 
       <FlatList
@@ -60,7 +61,7 @@ const ListenInScreen = () => {
             <View style={styles.textContainer}>
               <Text style={styles.title}>{item.name}</Text>
               <Text style={styles.description} numberOfLines={3}>{item.description}</Text>
-              <Text style={styles.link}>Tap to listen on Spotify</Text>
+              <Text style={styles.link}>{i18n.t('tapToListen')}</Text>
             </View>
           </TouchableOpacity>
         )}
@@ -87,6 +88,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 4,
+    marginTop:36
   },
   headerSubtitle: {
     fontSize: 14,

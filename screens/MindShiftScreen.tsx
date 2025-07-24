@@ -6,6 +6,7 @@ import {
 import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { reframeThought } from '../services/reframeThought';
+import i18n from '../src/i18n/i18n';
 
 export const MindShiftScreen = () => {
   const [thought, setThought] = useState('');
@@ -36,18 +37,17 @@ export const MindShiftScreen = () => {
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>MindShift</Text>
-        <Text style={styles.subtitle}>
-          Gently reframe heavy thoughts with compassion.
-        </Text>
+      <Text style={styles.title}>{i18n.t('mindShiftTitle')}</Text>
+      <Text style={styles.subtitle}>{i18n.t('mindShiftSubtitle')}</Text>
+
       </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.inputSection}>
-          <Text style={styles.inputLabel}>What thought is weighing on you today?</Text>
+        <Text style={styles.inputLabel}>{i18n.t('thoughtWeighing')}</Text>
           <TextInput
             style={styles.textInput}
-            placeholder="I feel like..."
+            placeholder={i18n.t('mindShiftPlaceholder')}
             placeholderTextColor={Colors.textSecondary}
             value={thought}
             onChangeText={setThought}
@@ -76,8 +76,9 @@ export const MindShiftScreen = () => {
               disabled={!thought.trim() || isLoading}
             >
               <Text style={styles.buttonText}>
-                {isLoading ? 'Reframing...' : 'Reframe This Thought'}
+              {isLoading ? i18n.t('reframing') : i18n.t('reframeButton')}
               </Text>
+
             </TouchableOpacity>
           ) : (
             <View style={styles.buttonRow}>
@@ -85,13 +86,13 @@ export const MindShiftScreen = () => {
                 style={[styles.button, styles.secondaryButton]}
                 onPress={handleTryAgain}
               >
-                <Text style={styles.secondaryButtonText}>Try Again</Text>
+                <Text style={styles.secondaryButtonText}>{i18n.t('tryAgain')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.primaryButton]}
                 onPress={() => console.log('Done')}
               >
-                <Text style={styles.buttonText}>Done</Text>
+               <Text style={styles.buttonText}>{i18n.t('done')}</Text>
               </TouchableOpacity>
             </View>
           )}

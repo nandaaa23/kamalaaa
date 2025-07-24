@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 interface Message {
   id: string;

@@ -3,28 +3,29 @@ import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-na
 import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useRouter } from 'expo-router';
+import i18n from '../src/i18n/i18n';
 
 export const BreatheAndBeScreen: React.FC = () => {
   const router = useRouter();
 
   const exercises = [
-    {
-      title: 'MindShift',
-      description: 'Gently reframe heavy thoughts',
+    {title: i18n.t('mindShiftTitle'),
+      description: i18n.t('mindShiftDescription'),      
       icon: '🌥',
       color: Colors.lightCyan,
       screen: 'MindShiftScreen',
     },
     {
-      title: 'Echo Our Heartbeats',
-      description: 'Feel your rhythm. Feel your bond.',
+      title: i18n.t('echoHeartbeatsTitle'),
+description: i18n.t('echoHeartbeatsDescription'),
+
       icon: '💓',
       color: Colors.mistyRose,
       screen: 'HeartbeatEchoScreen',
     },
     {
-      title: 'Guilt Release Bubbles',
-      description: 'Pop what you\'re carrying. Let a little go.',
+      title: i18n.t('guiltBubblesTitle'),
+description: i18n.t('guiltBubblesDescription'),
       icon: '🫧',
       color: Colors.pinkLavender1,
       screen: 'GuiltReleaseBubblesScreen',
@@ -35,10 +36,8 @@ export const BreatheAndBeScreen: React.FC = () => {
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
-        <Text style={styles.title}>Breathe & Be</Text>
-        <Text style={styles.subtitle}>
-          Gentle practices to calm, center, and nurture you.
-        </Text>
+      <Text style={styles.title}>{i18n.t('breatheBeTitle')}</Text>
+<Text style={styles.subtitle}>{i18n.t('breatheBeSubtitle')}</Text>
       </View>
 
       <View style={styles.exercises}>

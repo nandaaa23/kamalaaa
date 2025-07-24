@@ -6,7 +6,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 interface AuthScreenProps {
   onComplete: (authenticatedUser?: User) => void;

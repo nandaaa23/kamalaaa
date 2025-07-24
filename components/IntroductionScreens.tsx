@@ -8,7 +8,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 const { width } = Dimensions.get('window');
 

@@ -5,7 +5,7 @@ import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 export const SecretCircleScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'share' | 'read' | 'my-replies'>('read');

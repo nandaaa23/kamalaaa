@@ -4,7 +4,7 @@ import { Colors } from '../constants/Colors';
 import { FeatureCard } from '../components/FeatureCard';
 import { useAuth } from '../contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 
 const HomeScreen: React.FC = () => {
@@ -37,7 +37,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       title: i18n.t('refl'),
-      description:  i18n.t('refl'),
+      description:  i18n.t('refldesc'),
       icon: '📝',
       color: Colors.mistyRose,
       screen: '/ReflectionsScreen', 
@@ -45,7 +45,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       title:  i18n.t('sc'),
-      description:i18n.t('sc'),
+      description:i18n.t('scdesc'),
       icon: '🌸',
       color: Colors.pinkLavender1,
       screen: '/SecretCircleScreen', 
@@ -61,7 +61,7 @@ const HomeScreen: React.FC = () => {
     },
     {
       title:i18n.t('lnh'),
-      description: 'lnhdesc',
+      description: i18n.t('lnhhdesc'),
       icon: '🌱',
       color: Colors.honeydew,
       screen: '/LearnAndHealScreen', 

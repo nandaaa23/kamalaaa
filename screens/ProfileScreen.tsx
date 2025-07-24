@@ -33,6 +33,7 @@ import {
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
+import i18n from '../src/i18n/i18n';
 
 interface UserInfo {
   name: string;
@@ -51,21 +52,19 @@ interface Section {
   data: SectionItem[];
 }
 
-
-
-
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
   const { logout } = useAuth();
   const [isPremium, setIsPremium] = useState<boolean>(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
-  const [selectedLanguage, setSelectedLanguage] = useState<string>('English');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('en');
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [currentModal, setCurrentModal] = useState<string>('');
+
   const [userInfo, setUserInfo] = useState<UserInfo>({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 8900',
+    name: i18n.t('defaultName'),
+    email: i18n.t('defaultEmail'),
+    phone: i18n.t('defaultPhone'),
   });
 
   useEffect(() => {
@@ -83,9 +82,9 @@ const ProfileScreen: React.FC = () => {
       if (userData) {
         const user = JSON.parse(userData);
         setUserInfo({
-          name: user.name || 'User',
-          email: user.email || 'user@example.com',
-          phone: user.phone || '+1 234 567 8900',
+          name: user.name || i18n.t('defaultName'),
+          email: user.email || i18n.t('defaultEmail'),
+          phone: user.phone || i18n.t('defaultPhone'),
         });
       } else if (savedUserInfo) {
         setUserInfo(JSON.parse(savedUserInfo));
@@ -110,7 +109,7 @@ const ProfileScreen: React.FC = () => {
       await AsyncStorage.setItem('userInfo', JSON.stringify(updatedUserInfo));
     } catch (error) {
       console.error('Error saving user data:', error);
-      Alert.alert('Error', 'Failed to save user information');
+      Alert.alert(i18n.t('errorTitle'), i18n.t('saveUserError'));
     }
   };
 
@@ -143,30 +142,30 @@ const ProfileScreen: React.FC = () => {
 
   const handleUpgradeToPremium = (): void => {
     Alert.alert(
-      'Upgrade to Premium',
-      'Unlock exclusive features with Kamala Premium!\n\n• Ad-free experience\n• Advanced features\n• Priority support\n• Monthly updates',
+      i18n.t('upgradeTitle'),
+      i18n.t('upgradeMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: i18n.t('cancel'), style: 'cancel' },
         {
-          text: 'Upgrade - $9.99/month',
+          text: i18n.t('upgradeButton'),
           onPress: async () => {
-            Alert.alert('Success!', 'Welcome to Kamala Premium!');
+            Alert.alert(i18n.t('success'), i18n.t('premiumWelcome'));
             setIsPremium(true);
             await savePreferences('isPremium', true);
           },
-        },
+        },        
       ]
     );
   };
 
   const handlePayments = (): void => {
     Alert.alert(
-      'Payment Methods',
-      'Manage your payment methods and billing history.',
+      i18n.t('paymentMethodsTitle'),
+      i18n.t('paymentMethodsSubtitle'),
       [
-        { text: 'View Billing History', onPress: () => console.log('Billing history') },
-        { text: 'Add Payment Method', onPress: () => console.log('Add payment') },
-        { text: 'Cancel', style: 'cancel' },
+        { text: i18n.t('viewBillingHistory'), onPress: () => console.log('Billing history') },
+        { text: i18n.t('addPaymentMethod'), onPress: () => console.log('Add payment') },
+        { text: i18n.t('cancel'), style: 'cancel' },
       ]
     );
   };
@@ -174,136 +173,180 @@ const ProfileScreen: React.FC = () => {
   const handleRateUs = async (): Promise<void> => {
     try {
       await Share.share({
-        message: 'Check out Kamala app! It\'s amazing!',
-        title: 'Kamala App',
+        message: i18n.t('share.message') as string,
+        title: i18n.t('share.title') as string,
       });
     } catch (error) {
-      Alert.alert('Error', 'Unable to share at this time');
-    }
+      Alert.alert(
+        i18n.t('errorTitle') || 'Error',
+        i18n.t('shareErrorMessage') || 'Unable to share at this time'
+      );
+    }    
   };
 
   const handleFAQs = (): void => {
     Alert.alert(
-      'Frequently Asked Questions',
-      'Common questions and answers:\n\n• How to reset password?\n• How to contact support?\n• How to upgrade account?\n• How to change language?',
-      [{ text: 'OK' }]
-    );
+      i18n.t('faqTitle') || 'Frequently Asked Questions',
+      i18n.t('faqContent') || 'Common questions and answers',
+      [{ text: i18n.t('ok') || 'OK' }]
+    );    
   };
 
   const handleContactUs = (): void => {
     Alert.alert(
-      'Contact Us',
-      'Choose how you\'d like to contact us:',
+      i18n.t('contactTitle'),
+      i18n.t('contactMessage'),
       [
         {
-          text: 'Email',
+          text: i18n.t('email'),
           onPress: () => Linking.openURL('mailto:support@kamalaapp.com'),
         },
         {
-          text: 'Phone',
+          text: i18n.t('contactPhone'),
           onPress: () => Linking.openURL('tel:+1234567890'),
         },
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: i18n.t('cancel'),
+          style: 'cancel',
+        },
       ]
-    );
+    );    
   };
 
   const handlePrivacyPolicy = (): void => {
     Alert.alert(
-      'Privacy Policy',
-      'Your privacy is important to us. We collect and use your data to provide the best experience while keeping your information secure.',
-      [{ text: 'OK' }]
+      i18n.t('privacyTitle'),
+      i18n.t('privacyMessage'),
+      [{ text: i18n.t('ok') }]
     );
   };
-
+  
   const handleTermsOfService = (): void => {
     Alert.alert(
-      'Terms of Service',
-      'By using Kamala app, you agree to our terms and conditions. Please read them carefully.',
-      [{ text: 'OK' }]
+      i18n.t('termsTitle'),
+      i18n.t('termsMessage'),
+      [{ text: i18n.t('ok') }]
     );
   };
-
+  
   const handleSettings = (): void => {
     setCurrentModal('settings');
     setModalVisible(true);
   };
 
-
-const handleLogout = (): void => {
-  Alert.alert(
-    'Logout',
-    'Are you sure you want to logout?',
-    [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            console.log('🚪 Starting logout process...');
-            await logout(); 
-            console.log('🔒 Firebase logout done');
-            router.replace('/auth'); 
-            console.log('✅ Logout completed');
-          } catch (error) {
-            console.error('❌ Logout error:', error);
-          }
+  const handleLogout = (): void => {
+    Alert.alert(
+      i18n.t('logoutTitle'),
+      i18n.t('logoutMessage'),
+      [
+        { text: i18n.t('cancel'), style: 'cancel' },
+        {
+          text: i18n.t('logoutConfirm'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout();
+              router.replace('/auth');
+            } catch (error) {
+              console.error('Logout error:', error);
+            }
+          },
         },
-      },
-    ]
-  );
-};
-
-
-
+      ]
+    );
+  };
+  
   const sections: Section[] = [
     {
-      title: 'Personal Info',
+      title: i18n.t('profile.personalInfo'),
       data: [
-        { icon: <User size={18} color="#666" />, label: 'Account', onPress: handleAccountPress },
-        { icon: <Globe size={18} color="#666" />, label: 'Language', onPress: handleLanguagePress },
-        { icon: <Bell size={18} color="#666" />, label: 'Notifications', onPress: handleNotificationsPress },
+        { 
+          icon: <User size={18} color="#666" />, 
+          label: i18n.t('profile.account'),
+          onPress: handleAccountPress 
+        },
+        { 
+          icon: <Globe size={18} color="#666" />, 
+          label: i18n.t('profile.language'),
+          onPress: handleLanguagePress 
+        },
+        { 
+          icon: <Bell size={18} color="#666" />, 
+          label: i18n.t('profile.notifications'),
+          onPress: handleNotificationsPress 
+        },
       ],
     },
     {
-      title: 'Premium Features',
+      title: i18n.t('profile.premiumFeatures'),
       data: [
         { 
           icon: <Crown size={18} color={isPremium ? "#FFD700" : "#666"} />, 
-          label: isPremium ? 'Premium Active' : 'Upgrade to Premium', 
-          onPress: isPremium ? () => Alert.alert('Premium', 'You are already a premium user!') : handleUpgradeToPremium,
+          label: isPremium ? i18n.t('profile.premiumActive') : i18n.t('profile.upgradeToPremium'), 
+          onPress: isPremium ? () => Alert.alert(i18n.t('profile.premium'), i18n.t('profile.premiumMessage')) : handleUpgradeToPremium,
         },
-        { icon: <CreditCard size={18} color="#666" />, label: 'Payments', onPress: handlePayments },
-        { icon: <Star size={18} color="#666" />, label: 'Rate Us', onPress: handleRateUs },
+        { 
+          icon: <CreditCard size={18} color="#666" />, 
+          label: i18n.t('profile.payments'),
+          onPress: handlePayments 
+        },
+        { 
+          icon: <Star size={18} color="#666" />, 
+          label: i18n.t('profile.rateUs'),
+          onPress: handleRateUs 
+        },
       ],
     },
     {
-      title: 'Support',
+      title: i18n.t('profile.support'),
       data: [
-        { icon: <HelpCircle size={18} color="#666" />, label: 'FAQs', onPress: handleFAQs },
-        { icon: <Mail size={18} color="#666" />, label: 'Contact Us', onPress: handleContactUs },
-        { icon: <Shield size={18} color="#666" />, label: 'Privacy Policy', onPress: handlePrivacyPolicy },
-        { icon: <FileText size={18} color="#666" />, label: 'Terms of Service', onPress: handleTermsOfService },
+        { 
+          icon: <HelpCircle size={18} color="#666" />, 
+          label: i18n.t('profile.faqs'),
+          onPress: handleFAQs 
+        },
+        { 
+          icon: <Mail size={18} color="#666" />, 
+          label: i18n.t('profile.contactUs'),
+          onPress: handleContactUs 
+        },
+        { 
+          icon: <Shield size={18} color="#666" />, 
+          label: i18n.t('profile.privacyPolicy'),
+          onPress: handlePrivacyPolicy 
+        },
+        { 
+          icon: <FileText size={18} color="#666" />, 
+          label: i18n.t('profile.termsOfService'),
+          onPress: handleTermsOfService 
+        },
       ],
     },
     {
-      title: 'General',
+      title: i18n.t('profile.general'),
       data: [
-        { icon: <Settings size={18} color="#666" />, label: 'Settings', onPress: handleSettings },
-        { icon: <LogOut size={18} color="#e74c3c" />, label: 'Logout', onPress: handleLogout },
+        { 
+          icon: <Settings size={18} color="#666" />, 
+          label: i18n.t('profile.settings'),
+          onPress: handleSettings 
+        },
+        { 
+          icon: <LogOut size={18} color="#e74c3c" />, 
+          label: i18n.t('profile.logout'),
+          onPress: handleLogout 
+        },
       ],
     },
   ];
 
-  const renderModal = (): ReactElement | null => {
+  const renderModalContent = (): ReactElement | null => {
     switch (currentModal) {
       case 'account':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Account Information</Text>
+            <Text style={styles.modalTitle}>{i18n.t('modals.account.title')}</Text>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Name</Text>
+              <Text style={styles.inputLabel}>{i18n.t('modals.account.name')}</Text>
               <TextInput
                 style={styles.input}
                 value={userInfo.name}
@@ -311,7 +354,7 @@ const handleLogout = (): void => {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Email</Text>
+              <Text style={styles.inputLabel}>{i18n.t('modals.account.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={userInfo.email}
@@ -320,7 +363,7 @@ const handleLogout = (): void => {
               />
             </View>
             <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Phone</Text>
+              <Text style={styles.inputLabel}>{i18n.t('modals.account.phone')}</Text>
               <TextInput
                 style={styles.input}
                 value={userInfo.phone}
@@ -332,99 +375,125 @@ const handleLogout = (): void => {
               style={styles.saveButton} 
               onPress={async () => {
                 await saveUserData(userInfo);
-                Alert.alert('Success', 'Account information updated!');
+                Alert.alert(
+                  i18n.t('common.success'), 
+                  i18n.t('modals.account.updateSuccess')
+                );
                 setModalVisible(false);
               }}
             >
-              <Text style={styles.saveButtonText}>Save Changes</Text>
+              <Text style={styles.saveButtonText}>{i18n.t('common.saveChanges')}</Text>
             </TouchableOpacity>
           </View>
         );
-
+  
       case 'language':
-        const languages: string[] = ['English', 'Spanish', 'French', 'German', 'Italian', 'Portuguese'];
+
+      const languages = [
+        { code: 'en', name: i18n.t('languagess.english') },
+        { code: 'ml', name: i18n.t('languagess.malayalam') },
+        { code: 'es', name: i18n.t('languagess.spanish') },
+        { code: 'fr', name: i18n.t('languagess.french') }
+      ];
+        
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Language</Text>
+            <Text style={styles.modalTitle}>{i18n.t('modals.language.title')}</Text>
             {languages.map((lang) => (
               <TouchableOpacity
-                key={lang}
-                style={[styles.languageOption, selectedLanguage === lang && styles.selectedLanguage]}
+                key={lang.code}
+                style={[styles.languageOption, selectedLanguage === lang.code && styles.selectedLanguage]}
                 onPress={async () => {
-                  setSelectedLanguage(lang);
-                  await savePreferences('selectedLanguage', lang);
-                  Alert.alert('Language Changed', `Language set to ${lang}`);
+                  setSelectedLanguage(lang.code);
+                  await savePreferences('selectedLanguage', lang.code);
+                  Alert.alert(
+                    i18n.t('modals.language.changed'),
+                    i18n.t('modals.language.setTo', { language: lang.name })
+                  );
                   setModalVisible(false);
                 }}
               >
-                <Text style={[styles.languageText, selectedLanguage === lang && styles.selectedLanguageText]}>
-                  {lang}
+                <Text style={[styles.languageText, selectedLanguage === lang.code && styles.selectedLanguageText]}>
+                  {lang.name}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
         );
-
+  
       case 'notifications':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Notification Settings</Text>
+            <Text style={styles.modalTitle}>{i18n.t('modals.notifications.title')}</Text>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Push Notifications</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.notifications.push')}</Text>
               <Switch
                 value={notificationsEnabled}
                 onValueChange={async (value) => {
                   setNotificationsEnabled(value);
                   await savePreferences('notificationsEnabled', value);
-                  Alert.alert('Updated', `Push notifications ${value ? 'enabled' : 'disabled'}`);
+                  Alert.alert(
+                    i18n.t('common.updated'),
+                    value ? i18n.t('modals.notifications.pushEnabled') 
+                          : i18n.t('modals.notifications.pushDisabled')
+                  );
                 }}
               />
             </View>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Email Notifications</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.notifications.email')}</Text>
               <Switch value={true} onValueChange={() => {}} />
             </View>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>SMS Notifications</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.notifications.sms')}</Text>
               <Switch value={false} onValueChange={() => {}} />
             </View>
           </View>
         );
-
+  
       case 'settings':
         return (
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>App Settings</Text>
+            <Text style={styles.modalTitle}>{i18n.t('modals.settings.title')}</Text>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Dark Mode</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.settings.darkMode')}</Text>
               <Switch value={false} onValueChange={() => {}} />
             </View>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Auto-sync</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.settings.autoSync')}</Text>
               <Switch value={true} onValueChange={() => {}} />
             </View>
             <View style={styles.switchContainer}>
-              <Text style={styles.switchLabel}>Offline Mode</Text>
+              <Text style={styles.switchLabel}>{i18n.t('modals.settings.offlineMode')}</Text>
               <Switch value={false} onValueChange={() => {}} />
             </View>
             <TouchableOpacity
               style={styles.dangerButton}
               onPress={() => {
                 Alert.alert(
-                  'Clear Cache',
-                  'This will clear all cached data. Are you sure?',
+                  i18n.t('modals.settings.clearCache'),
+                  i18n.t('modals.settings.clearCacheConfirm'),
                   [
-                    { text: 'Cancel', style: 'cancel' },
-                    { text: 'Clear', onPress: () => Alert.alert('Success', 'Cache cleared!') },
+                    { 
+                      text: i18n.t('common.cancel'), 
+                      style: 'cancel' 
+                    },
+                    { 
+                      text: i18n.t('common.clear'), 
+                      onPress: () => Alert.alert(
+                        i18n.t('common.success'), 
+                        i18n.t('modals.settings.cacheCleared')
+                      ) 
+                    },
                   ]
                 );
               }}
             >
-              <Text style={styles.dangerButtonText}>Clear Cache</Text>
+              <Text style={styles.dangerButtonText}>{i18n.t('modals.settings.clearCache')}</Text>
             </TouchableOpacity>
           </View>
         );
-
+  
       default:
         return null;
     }
@@ -436,12 +505,12 @@ const handleLogout = (): void => {
         <ChevronLeft size={24} color="#333" />
       </TouchableOpacity>
 
-      <Text style={styles.header}>Profile</Text>
+      <Text style={styles.header}>{i18n.t('profile.title')}</Text>
       
       {isPremium && (
         <View style={styles.premiumBadge}>
           <Crown size={16} color="#FFD700" />
-          <Text style={styles.premiumText}>Premium User</Text>
+          <Text style={styles.premiumText}>{i18n.t('profile.premiumBadge')}</Text>
         </View>
       )}
 
@@ -452,7 +521,7 @@ const handleLogout = (): void => {
             <TouchableOpacity key={i} style={styles.item} onPress={item.onPress}>
               <View style={styles.itemContent}>
                 <View style={styles.icon}>{item.icon}</View>
-                <Text style={[styles.label, item.label === 'Logout' && styles.logoutText]}>
+                <Text style={[styles.label, item.label === i18n.t('profile.logout') && styles.logoutText]}>
                   {item.label}
                 </Text>
               </View>
@@ -489,7 +558,7 @@ const handleLogout = (): void => {
                 <Text style={styles.closeButtonText}>✕</Text>
               </TouchableOpacity>
               <ScrollView showsVerticalScrollIndicator={false}>
-                {renderModal()}
+                {renderModalContent()}
               </ScrollView>
             </TouchableOpacity>
           </TouchableOpacity>

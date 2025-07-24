@@ -26,16 +26,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useData } from '../contexts/DataContext';
 import { BackButton } from '../components/BackButton';
+import i18n from '../src/i18n/i18n';
 
 const { width, height } = Dimensions.get('window');
 
 const AFFIRMATIONS = [
-  "Feel your heartbeat... you are present, and so is your baby.",
-  "You are connected. You are whole.",
-  "Your love is enough — just as you are.",
-  "Close your eyes. Breathe in. Let love and rest settle into your body.",
-  "Your heartbeat grounds you. Your baby feels your calm.",
-  "There is strength in stillness. You are doing beautifully.",
+  i18n.t('affirmation1'),
+  i18n.t('affirmation2'),
+  i18n.t('affirmation3'),
+  i18n.t('affirmation4'),
+  i18n.t('affirmation5'),
+  i18n.t('affirmation6'),
 ];
 
 export const HeartbeatEchoScreen: React.FC = () => {
@@ -160,7 +161,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
   };
 
   const saveSession = async () => {
-    const title = `Heartbeat Echo - ${new Date().toLocaleDateString()}`;
+    const title = `${i18n.t('echoHeartbeatsTitle')} - ${new Date().toLocaleDateString('ml-IN')}`;
     await addHeartbeatMoment({
       date: new Date().toISOString(),
       babyHeartbeat: tapTimestamps, 
@@ -255,10 +256,8 @@ export const HeartbeatEchoScreen: React.FC = () => {
               entering={FadeIn.duration(1000)}
               style={styles.endContent}
             >
-              <Text style={styles.endTitle}>This moment is yours.</Text>
-              <Text style={styles.endSubtitle}>
-                You can return to it anytime.
-              </Text>
+              <Text style={styles.endTitle}>{i18n.t('endTitle')}</Text>
+             <Text style={styles.endSubtitle}>{i18n.t('endSubtitle')}</Text>
 
               <View style={styles.endActions}>
                 <TouchableOpacity
@@ -266,7 +265,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
                   onPress={saveSession}
                 >
                   <Text style={styles.saveIcon}>💾</Text>
-                  <Text style={styles.saveButtonText}>Save this Session</Text>
+                  <Text style={styles.saveButtonText}>{i18n.t('saveSession')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -274,7 +273,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
                   onPress={() => setShowSessions(true)}
                 >
                   <Text style={styles.viewIcon}>📖</Text>
-                  <Text style={styles.viewButtonText}>View Past Sessions</Text>
+                  <Text style={styles.viewButtonText}>{i18n.t('viewPastSessions')}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -286,7 +285,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
                   setTapTimestamps([]);
                 }}
               >
-                <Text style={styles.newSessionText}>Start New Session</Text>
+               <Text style={styles.newSessionText}>{i18n.t('startNewSession')}</Text>
               </TouchableOpacity>
             </Animated.View>
           </SafeAreaView>
@@ -300,7 +299,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
           <View style={styles.modalContainer}>
             <BlurView intensity={80} style={styles.modalBlur}>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Past Sessions</Text>
+              <Text style={styles.modalTitle}>{i18n.t('pastSessionsTitle')}</Text>
                 <ScrollView style={styles.sessionsList}>
                   {heartbeatMoments.map((moment) => (
                     <View key={moment.id} style={styles.sessionCard}>
@@ -321,7 +320,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
                   style={styles.closeButton}
                   onPress={() => setShowSessions(false)}
                 >
-                  <Text style={styles.closeButtonText}>Close</Text>
+                  <Text style={styles.closeButtonText}>{i18n.t('close')}</Text>
                 </TouchableOpacity>
               </View>
             </BlurView>
@@ -344,16 +343,18 @@ export const HeartbeatEchoScreen: React.FC = () => {
             entering={FadeIn.duration(800)}
             style={styles.calibrationContent}
           >
-            <Text style={styles.calibrationTitle}>
-              {phase === 'baby' ? "Baby's Rhythm" : "Your Rhythm"}
-            </Text>
+           <Text style={styles.calibrationTitle}>
+             {phase === 'baby' ? i18n.t('babyRhythm') : i18n.t('yourRhythm')}
+           </Text>
+
             
             <Text style={styles.calibrationInstructions}>
               {phase === 'baby' 
-                ? "Let's begin by tuning into your baby's rhythm.\n\nSoftly tap the screen in sync with how you imagine your baby's heartbeat might feel — light, quick, full of life.\n\nTap four times whenever you're ready."
-                : "Now place your hand gently on your heart. Breathe slowly.\n\nTap the screen four times in rhythm with your own heartbeat — steady, grounding, present."
+              ? i18n.t('calibrationBaby')
+                : i18n.t('calibrationYou')
               }
-            </Text>
+             </Text>
+
 
             <Pressable
               style={styles.tapZone}
@@ -367,7 +368,7 @@ export const HeartbeatEchoScreen: React.FC = () => {
                   <Text style={styles.tapCount}>{tapCount}/4</Text>
                 </LinearGradient>
               </Animated.View>
-              <Text style={styles.tapHint}>Tap here</Text>
+              <Text style={styles.tapHint}>{i18n.t('tapHere')}</Text>
             </Pressable>
 
             <View style={styles.progressDots}>

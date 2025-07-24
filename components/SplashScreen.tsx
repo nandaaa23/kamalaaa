@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Colors } from '../constants/Colors';
 import WaveImage from '../assets/images/wave.png';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 const { height } = Dimensions.get('window');
 

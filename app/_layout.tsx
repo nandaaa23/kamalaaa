@@ -12,7 +12,7 @@ import AuthScreen from '@/screens/AuthScreen';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { DataProvider } from '@/contexts/DataContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import i18n from '../app/src/i18n/i18n';
+
 
 
 interface User {

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Colors } from '../constants/Colors';
 import { UserProfile } from '../types';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 interface OnboardingScreenProps {
   onComplete: (profile: UserProfile) => void;

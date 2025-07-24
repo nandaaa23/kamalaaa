@@ -4,7 +4,7 @@ import { Colors } from '../constants/Colors';
 import { MoodSelector } from '../components/MoodSelector';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
-import i18n from '../app/src/i18n/i18n';
+import i18n from '../src/i18n/i18n';
 
 export const MoodLogScreen: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<'happy' | 'down' | 'overwhelmed' | 'numb' | null>(null);
