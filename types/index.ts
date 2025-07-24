@@ -1,4 +1,4 @@
-
+import { Timestamp } from 'firebase/firestore';
 
 export interface User {
   id: string;
@@ -49,7 +49,8 @@ export interface Secret {
   content: string;
   allowReplies: boolean;
   replies: Reply[];
-  timestamp: number;
+  timestamp: Timestamp;
+  authorId: string;
 }
 
 export interface Reply {
@@ -75,6 +76,7 @@ export interface ForumPost {
   timestamp: number;
   replies: ForumReply[];
   tags: string[];
+  type: 'discussion' | 'advice' | 'question';
 }
 
 export interface ForumReply {
@@ -88,5 +90,4 @@ export interface ForumReply {
 export type RootStackParamList = {
   HomeScreen: undefined;
   ChatbotScreen: undefined;
-  // Add more screens as needed
 };

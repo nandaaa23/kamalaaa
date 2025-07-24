@@ -3,17 +3,27 @@ import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Tex
 import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
+import GuestGuard from '@/components/GuestGuard';
 
 export const CommunityHubScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'questions' | 'discussions'>('all');
   const { forumPosts } = useData();
 
-  const filteredPosts = forumPosts.filter(post =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredPosts = forumPosts
+  .filter(post => {
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    const matchesTab =
+      activeTab === 'all' ||
+      (activeTab === 'questions' && post.type === 'question') ||
+      (activeTab === 'discussions' && post.type === 'discussion');
+
+    return matchesSearch && matchesTab;
+  });
 
   const tabs = [
     { key: 'all', label: 'All Posts' },
@@ -22,6 +32,7 @@ export const CommunityHubScreen: React.FC = () => {
   ];
 
   return (
+    <GuestGuard>
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
@@ -106,6 +117,7 @@ export const CommunityHubScreen: React.FC = () => {
         <Text style={styles.fabText}>+</Text>
       </TouchableOpacity>
     </SafeAreaView>
+    </GuestGuard>
   );
 };
 
