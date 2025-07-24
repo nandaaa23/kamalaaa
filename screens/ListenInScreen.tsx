@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Linking, ActivityIndicator } from 'react-native';
 import i18n from '../src/i18n/i18n';
+import GuestGuard from '../components/GuestGuard';
+
 interface Podcast {
   id: string;
   name: string;
@@ -43,6 +45,7 @@ const ListenInScreen = () => {
 
   return (
     <>
+    <GuestGuard>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>🎧 {i18n.t('pod')}</Text>
         <Text style={styles.headerSubtitle}>
@@ -66,6 +69,7 @@ const ListenInScreen = () => {
           </TouchableOpacity>
         )}
       />
+      </GuestGuard>
     </>
   );
 };

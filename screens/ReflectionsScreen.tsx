@@ -6,6 +6,7 @@ import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import i18n from '../src/i18n/i18n';
 
+
 export const ReflectionsScreen: React.FC = () => {
   const [reflection, setReflection] = useState('');
   const [selectedMood, setSelectedMood] = useState<string>('');

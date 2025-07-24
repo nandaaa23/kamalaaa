@@ -14,6 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import io from 'socket.io-client';
 import { Colors } from '../constants/Colors';
+import GuestGuard from '../components/GuestGuard';
 
 const socket = io('http://192.168.1.3:3000');
 
@@ -212,6 +213,7 @@ export default function CircleOfSupportScreen() {
   );
 
   return (
+    <GuestGuard>
     <SafeAreaView style={styles.safeArea}>
       <KeyboardAvoidingView
         style={styles.keyboardAvoiding}
@@ -308,6 +310,7 @@ export default function CircleOfSupportScreen() {
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
+    </GuestGuard>
   );
 }
 

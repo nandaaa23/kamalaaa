@@ -4,6 +4,7 @@ import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useRouter } from 'expo-router';
 import i18n from '../src/i18n/i18n';
+import GuestGuard from '../components/GuestGuard';
 
 export const BreatheAndBeScreen: React.FC = () => {
   const router = useRouter();
@@ -33,6 +34,7 @@ description: i18n.t('guiltBubblesDescription'),
   ];
 
   return (
+    <GuestGuard>
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
@@ -57,6 +59,7 @@ description: i18n.t('guiltBubblesDescription'),
         ))}
       </View>
     </SafeAreaView>
+    </GuestGuard>
   );
 };
 
