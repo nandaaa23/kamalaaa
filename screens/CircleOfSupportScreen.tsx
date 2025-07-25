@@ -1,443 +1,307 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
   FlatList,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import io from 'socket.io-client';
+import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import { auth, db } from '../firebase/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
+import io from 'socket.io-client';
 
-const socket = io('http://192.168.1.3:3000');
+const { width } = Dimensions.get('window');
 
-type User = {
+interface UserProfile {
+  journeyStage: string;
+  currentFeelings: string[];
+  interests: string[];
+  language: string;
+  displayName: string;
+  role?: 'mother' | 'psychologist';
+  specialization?: string;
+  gender?: string;
+  city?: string;
+  registrationNumber?: string;
+  registrationCouncil?: string;
+  registrationYear?: string;
+  degree?: string;
+  college?: string;
+  completionYear?: string;
+  experience?: string;
+  diploma?: string;
+}
+
+interface User {
   id: string;
   name: string;
-  role: 'psychologist' | 'mom';
-  specialization?: string;
-  status: 'online' | 'offline';
-};
+  email: string;
+  isGuest: boolean;
+  onboardingComplete: boolean;
+  profile?: UserProfile;
+  role: 'mother' | 'psychologist';
+}
 
-type Message = {
-  id: string;
-  senderId: string;
-  receiverId: string;
-  content: string;
-  timestamp: Date;
-  status: 'sent' | 'delivered' | 'read';
-};
+type TabType = 'mothers' | 'psychologists' | 'peer-group'; // Removed 'all' from the type
 
-export default function CircleOfSupportScreen() {
+const CircleOfSupportScreen = () => {
   const [users, setUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const flatListRef = useRef<FlatList>(null);
-  const currentUserId = 'current_user'; 
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<TabType>('mothers'); // Default to 'mothers' instead of 'all'
+  const [currentUserRole, setCurrentUserRole] = useState<'mother' | 'psychologist' | null>(null);
+  const router = useRouter();
+  const currentUser = auth.currentUser;
+  const socket = io('http://172.20.10.3:3001');
 
   useEffect(() => {
-    setUsers([
-      { 
-        id: '1', 
-        name: 'Dr. Nisha Patel', 
-        role: 'psychologist',
-        specialization: 'Postpartum Mental Health',
-        status: 'online'
-      },
-      { 
-        id: '2', 
-        name: 'Aarti Sharma', 
-        role: 'mom',
-        status: 'online'
-      },
-      { 
-        id: '3', 
-        name: 'Rina Gupta', 
-        role: 'mom',
-        status: 'offline'
-      },
-    ]);
-  }, []);
+    const fetchUsers = () => {
+      const unsubscribeMothers = onSnapshot(collection(db, 'mothers'), (snapshot) => {
+        const motherUsers: User[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as User[];
 
-  useEffect(() => {
-    const handleMessage = (data: Message) => {
-      if (
-        selectedUser &&
-        (data.senderId === selectedUser.id || data.receiverId === selectedUser.id)
-      ) {
-        setMessages((prev) => [...prev, data]);
-        saveMessagesToStorage(selectedUser.id, [...messages, data]);
-      }
-    };
+        const currentUserData = motherUsers.find(u => u.id === currentUser?.uid);
+        if (currentUserData) {
+          setCurrentUserRole('mother');
+        }
 
-    socket.on('receive_message', handleMessage);
+        setUsers((prev) => {
+          const others = prev.filter((u) => u.role !== 'mother');
+          return [...others, ...motherUsers];
+        });
+      });
 
-    return () => {
-      socket.off('receive_message', handleMessage);
-    };
-  }, [selectedUser, messages]);
+      const unsubscribePsychologists = onSnapshot(collection(db, 'psychologists'), (snapshot) => {
+        const psychologistUsers: User[] = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        })) as User[];
 
+        const currentUserData = psychologistUsers.find(u => u.id === currentUser?.uid);
+        if (currentUserData) {
+          setCurrentUserRole('psychologist');
+        }
 
-  const loadMessagesFromStorage = async (userId: string) => {
-    try {
-      const storedMessages = await AsyncStorage.getItem(`messages_${currentUserId}_${userId}`);
-      if (storedMessages) {
-        const parsedMessages = JSON.parse(storedMessages).map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp)
-        }));
-        setMessages(parsedMessages);
-      } else {
-        setMessages([]);
-      }
-    } catch (error) {
-      console.error('Error loading messages:', error);
-      setMessages([]);
-    }
-  };
+        setUsers((prev) => {
+          const others = prev.filter((u) => u.role !== 'psychologist');
+          return [...others, ...psychologistUsers];
+        });
 
-  const saveMessagesToStorage = async (userId: string, messagesToSave: Message[]) => {
-    try {
-      await AsyncStorage.setItem(
-        `messages_${currentUserId}_${userId}`, 
-        JSON.stringify(messagesToSave)
-      );
-    } catch (error) {
-      console.error('Error saving messages:', error);
-    }
-  };
+        setLoading(false);
+      });
 
-  const handleUserSelect = async (user: User) => {
-    setSelectedUser(user);
-    setIsLoading(true);
-    await loadMessagesFromStorage(user.id);
-    setIsLoading(false);
-    
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  const handleSend = async () => {
-    if (selectedUser && message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        senderId: currentUserId,
-        receiverId: selectedUser.id,
-        content: message.trim(),
-        timestamp: new Date(),
-        status: 'sent'
+      return () => {
+        unsubscribeMothers();
+        unsubscribePsychologists();
       };
+    };
 
-      const updatedMessages = [...messages, newMessage];
-      setMessages(updatedMessages);
-      await saveMessagesToStorage(selectedUser.id, updatedMessages);
-      
-      socket.emit('send_message', newMessage);
-      setMessage('');
-      
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+    if (currentUser) {
+      fetchUsers();
+    }
+  }, [currentUser]);
+
+  const handleUserPress = (user: User) => {
+    router.push(`/talk/${user.id}`);
+  };
+
+  const handlePeerGroupPress = () => {
+    router.push('/talk/peer-group');
+  };
+
+  const getFilteredUsers = () => {
+    const filteredUsers = users.filter((u) => u.id !== currentUser?.uid);
+
+    switch (activeTab) {
+      case 'mothers':
+        return filteredUsers.filter((u) => u.role === 'mother');
+      case 'psychologists':
+        return filteredUsers.filter((u) => u.role === 'psychologist');
+      default:
+        return filteredUsers;
     }
   };
 
-  const handleBack = () => {
-    setSelectedUser(null);
-    setMessages([]);
-  };
+  const renderUserCard = ({ item }: { item: User }) => (
+    <TouchableOpacity style={styles.userCard} onPress={() => handleUserPress(item)}>
+      <View style={styles.userHeader}>
+        <View style={styles.avatarContainer}>
+          <Text style={styles.avatarText}>
+            {(item.profile?.displayName || item.name).charAt(0).toUpperCase()}
+          </Text>
+        </View>
+        <View style={styles.userInfo}>
+          <Text style={styles.userName}>
+            {item.profile?.displayName || item.name}
+          </Text>
+          <View style={styles.roleContainer}>
+            <Text style={styles.roleEmoji}>
+              {item.role === 'mother' ? '🌸' : '🎓'}
+            </Text>
+            <Text style={styles.roleText}>
+              {item.role === 'mother' ? 'Mother' : 'Psychologist'}
+            </Text>
+          </View>
+        </View>
+        <TouchableOpacity style={styles.connectButton}>
+          <Text style={styles.connectButtonText}>Connect</Text>
+        </TouchableOpacity>
+      </View>
 
-  const formatTime = (timestamp: Date) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
+      <View style={styles.userDetails}>
+        {item.profile?.city && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailIcon}>📍</Text>
+            <Text style={styles.detailText}>{item.profile.city}</Text>
+          </View>
+        )}
 
-  const renderMessage = ({ item }: { item: Message }) => (
-    <View
-      style={[
-        styles.messageBubble,
-        item.senderId === currentUserId ? styles.myMessage : styles.theirMessage,
-      ]}
+        {item.profile?.specialization && item.role === 'psychologist' && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailIcon}>🎯</Text>
+            <Text style={styles.detailText}>Specializes in {item.profile.specialization}</Text>
+          </View>
+        )}
+
+        {item.profile?.experience && item.role === 'psychologist' && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailIcon}>💼</Text>
+            <Text style={styles.detailText}>{item.profile.experience} years experience</Text>
+          </View>
+        )}
+
+        {item.profile?.journeyStage && item.role === 'mother' && (
+          <View style={styles.detailRow}>
+            <Text style={styles.detailIcon}>🌱</Text>
+            <Text style={styles.detailText}>Journey: {item.profile.journeyStage}</Text>
+          </View>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderTabButton = (tabType: TabType, label: string) => (
+    <TouchableOpacity
+      style={[styles.tabButton, activeTab === tabType && styles.activeTabButton]}
+      onPress={() => setActiveTab(tabType)}
     >
-      <Text style={[
-        styles.messageText,
-        item.senderId === currentUserId ? styles.myMessageText : styles.theirMessageText
-      ]}>
-        {item.content}
+      <Text style={[styles.tabButtonText, activeTab === tabType && styles.activeTabButtonText]}>
+        {label}
       </Text>
-      <Text style={[
-        styles.timestamp,
-        item.senderId === currentUserId ? styles.myTimestamp : styles.theirTimestamp
-      ]}>
-        {formatTime(item.timestamp)}
+      {activeTab === tabType && <View style={styles.tabIndicator} />}
+    </TouchableOpacity>
+  );
+
+  const renderPeerGroupCard = () => (
+    <TouchableOpacity style={styles.peerGroupCard} onPress={handlePeerGroupPress}>
+      <View style={styles.peerGroupHeader}>
+        <View style={styles.peerGroupIconContainer}>
+          <Text style={styles.peerGroupIcon}>👥</Text>
+        </View>
+        <View style={styles.peerGroupInfo}>
+          <Text style={styles.peerGroupTitle}>Mother's Peer Support Group</Text>
+          <Text style={styles.peerGroupSubtitle}>
+            Connect with fellow mothers in a safe, supportive space
+          </Text>
+        </View>
+      </View>
+
+      <TouchableOpacity style={styles.joinGroupButton}>
+        <Text style={styles.joinGroupButtonText}>Join Group Chat</Text>
+        <Text style={styles.joinGroupArrow}>→</Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyStateEmoji}>
+        {activeTab === 'mothers' ? '🌸' : activeTab === 'psychologists' ? '🎓' : '👥'}
+      </Text>
+      <Text style={styles.emptyStateTitle}>
+        {activeTab === 'peer-group'
+          ? 'Peer Group Available'
+          : `No ${activeTab} available`}
+      </Text>
+      <Text style={styles.emptyStateSubtitle}>
+        {activeTab === 'peer-group'
+          ? 'Join the peer group to connect with other mothers'
+          : 'Check back later for new connections in your support circle'}
       </Text>
     </View>
   );
 
-  const renderUserCard = ({ item }: { item: User }) => (
-    <TouchableOpacity
-      style={styles.userCard}
-      onPress={() => handleUserSelect(item)}
-    >
-      <View style={styles.userInfo}>
-        <View style={styles.userHeader}>
-          <Text style={styles.userName}>{item.name}</Text>
-          <View style={[
-            styles.statusDot, 
-            item.status === 'online' ? styles.onlineStatus : styles.offlineStatus
-          ]} />
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={Colors.primary} />
+          <Text style={styles.loadingText}>Loading your support circle...</Text>
         </View>
-        <Text style={styles.userRole}>
-          {item.role === 'psychologist' 
-            ? item.specialization || 'Licensed Psychologist'
-            : 'Community Member'
-          }
-        </Text>
-        <Text style={styles.userStatus}>
-          {item.status === 'online' ? 'Available now' : 'Last seen recently'}
-        </Text>
-      </View>
-      <Text style={styles.chatArrow}>💬</Text>
-    </TouchableOpacity>
-  );
+      </SafeAreaView>
+    );
+  }
+
+  const filteredUsers = getFilteredUsers();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoiding}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-      >
-        <View style={styles.container}>
-          {!selectedUser ? (
-            <>
-              <View style={styles.header}>
-                <Text style={styles.title}>Circle of Support</Text>
-                <Text style={styles.subtitle}>
-                  Connect with professionals and community members
-                </Text>
-              </View>
-              
-              <FlatList
-                data={users}
-                keyExtractor={(item) => item.id}
-                renderItem={renderUserCard}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.usersList}
-              />
-            </>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>🌿 Circle of Support</Text>
+        <Text style={styles.headerSubtitle}>
+          Connect with mothers and professionals in your journey
+        </Text>
+      </View>
+
+      <View style={styles.tabContainer}>
+        {renderTabButton('mothers', 'Mothers')}
+        {renderTabButton('psychologists', 'Psychologists')}
+        {currentUserRole === 'mother' && renderTabButton('peer-group', 'Peer Group')}
+      </View>
+
+      <View style={styles.listContainer}>
+        {activeTab === 'peer-group' ? (
+          currentUserRole === 'mother' ? (
+            <ScrollView contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
+              {renderPeerGroupCard()}
+            </ScrollView>
           ) : (
-            <View style={styles.chatContainer}>
-              {/* Chat Header */}
-              <View style={styles.chatHeader}>
-                <TouchableOpacity 
-                  onPress={handleBack} 
-                  style={styles.backButton}
-                >
-                  <Text style={styles.backButtonText}>← Back</Text>
-                </TouchableOpacity>
-                
-                <View style={styles.chatUserInfo}>
-                  <Text style={styles.chatUserName}>{selectedUser.name}</Text>
-                  <Text style={styles.chatUserRole}>
-                    {selectedUser.role === 'psychologist' 
-                      ? selectedUser.specialization || 'Licensed Psychologist'
-                      : 'Community Member'
-                    }
-                  </Text>
-                </View>
-                
-                <View style={[
-                  styles.headerStatusDot,
-                  selectedUser.status === 'online' ? styles.onlineStatus : styles.offlineStatus
-                ]} />
-              </View>
-
-              {/* Messages List */}
-              {isLoading ? (
-                <View style={styles.loadingContainer}>
-                  <Text style={styles.loadingText}>Loading messages...</Text>
-                </View>
-              ) : (
-                <FlatList
-                  ref={flatListRef}
-                  data={messages}
-                  keyExtractor={(item) => item.id}
-                  renderItem={renderMessage}
-                  contentContainerStyle={styles.messagesList}
-                  showsVerticalScrollIndicator={false}
-                  onContentSizeChange={() => 
-                    flatListRef.current?.scrollToEnd({ animated: true })
-                  }
-                />
-              )}
-
-              {/* Input Container */}
-              <View style={styles.inputContainer}>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Type your message..."
-                  value={message}
-                  onChangeText={setMessage}
-                  multiline
-                  maxLength={500}
-                />
-                <TouchableOpacity 
-                  onPress={handleSend} 
-                  style={[
-                    styles.sendButton,
-                    !message.trim() && styles.sendButtonDisabled
-                  ]}
-                  disabled={!message.trim()}
-                >
-                  <Text style={styles.sendButtonText}>Send</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.accessDenied}>
+              <Text style={styles.accessDeniedEmoji}>🚫</Text>
+              <Text style={styles.accessDeniedTitle}>Access Restricted</Text>
+              <Text style={styles.accessDeniedText}>
+                Peer groups are exclusively for mothers. Connect with individual mothers and psychologists instead.
+              </Text>
             </View>
-          )}
-        </View>
-      </KeyboardAvoidingView>
+          )
+        ) : filteredUsers.length === 0 ? (
+          renderEmptyState()
+        ) : (
+          <FlatList
+            data={filteredUsers}
+            keyExtractor={(item) => item.id}
+            renderItem={renderUserCard}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
-}
+};
 
+// ... (keep all your existing styles unchanged)
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F7F5EB',
-  },
-  keyboardAvoiding: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    backgroundColor: '#F7F5EB',
-    padding: 16,
-  },
-  header: {
-    marginBottom: 24,
-    paddingTop: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#323431',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#64748B',
-    lineHeight: 22,
-  },
-  usersList: {
-    paddingBottom: 20,
-  },
-  userCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  userInfo: {
-    flex: 1,
-  },
-  userHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  userName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#323431',
-    marginRight: 8,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  onlineStatus: {
-    backgroundColor: '#22C55E',
-  },
-  offlineStatus: {
-    backgroundColor: '#94A3B8',
-  },
-  userRole: {
-    fontSize: 14,
-    color: '#059669',
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  userStatus: {
-    fontSize: 12,
-    color: '#64748B',
-  },
-  chatArrow: {
-    fontSize: 24,
-  },
-  chatContainer: {
-    flex: 1,
-  },
-  chatHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 16,
-    paddingHorizontal: 4,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-    marginBottom: 16,
-  },
-  backButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#64748B',
-    fontWeight: '500',
-  },
-  chatUserInfo: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  chatUserName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#323431',
-  },
-  chatUserRole: {
-    fontSize: 12,
-    color: '#059669',
-    marginTop: 2,
-  },
-  headerStatusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    backgroundColor: Colors.background,
   },
   loadingContainer: {
     flex: 1,
@@ -445,95 +309,314 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
+    marginTop: 16,
     fontSize: 16,
-    color: '#64748B',
+    color: Colors.textSecondary,
   },
-  messagesList: {
-    flexGrow: 1,
-    paddingVertical: 8,
-  },
-  messageBubble: {
-    padding: 14,
-    borderRadius: 16,
-    marginBottom: 12,
-    maxWidth: '75%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  myMessage: {
-    backgroundColor: '#EEB6E7',
-    alignSelf: 'flex-end',
-    borderBottomRightRadius: 4,
-  },
-  theirMessage: {
-    backgroundColor: '#fff',
-    alignSelf: 'flex-start',
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  messageText: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  myMessageText: {
-    color: '#fff',
-  },
-  theirMessageText: {
-    color: '#323431',
-  },
-  timestamp: {
-    fontSize: 10,
-    marginTop: 4,
-  },
-  myTimestamp: {
-    color: 'rgba(255,255,255,0.7)',
-    alignSelf: 'flex-end',
-  },
-  theirTimestamp: {
-    color: '#94A3B8',
-    alignSelf: 'flex-start',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingTop: 16,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 16,
-    backgroundColor: '#F7F5EB',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-  },
-  textInput: {
-    flex: 1,
-    minHeight: 44,
-    maxHeight: 100,
-    padding: 14,
-    backgroundColor: '#fff',
-    borderRadius: 22,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#CBD5E1',
-    fontSize: 16,
-    textAlignVertical: 'center',
-  },
-  sendButton: {
-    backgroundColor: '#EEB6E7',
-    paddingVertical: 12,
+  header: {
     paddingHorizontal: 20,
-    borderRadius: 22,
+    paddingTop: 20,
+    paddingBottom: 16,
+    backgroundColor: Colors.background,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: Colors.background,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    position: 'relative',
+  },
+  activeTabButton: {
+    // Active styling handled by indicator
+  },
+  tabButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  activeTabButtonText: {
+    color: Colors.primary,
+    fontWeight: '600',
+  },
+  tabIndicator: {
+    position: 'absolute',
+    bottom: 0,
+    left: '25%',
+    right: '25%',
+    height: 3,
+    backgroundColor: Colors.primary,
+    borderRadius: 2,
+  },
+  listContainer: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  userCard: {
+    backgroundColor: Colors.mintCream,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  userHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  avatarContainer: {
+    width: 50,
+    height: 50,
+    backgroundColor: Colors.primary,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    minWidth: 60,
+    marginRight: 16,
   },
-  sendButtonDisabled: {
-    backgroundColor: '#CBD5E1',
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: 'white',
   },
-  sendButtonText: {
-    color: '#fff',
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  roleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  roleEmoji: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  roleText: {
+    fontSize: 14,
+    color: Colors.primary,
+    fontWeight: '500',
+  },
+  connectButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  connectButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: '600',
+  },
+  userDetails: {
+    gap: 8,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailIcon: {
+    fontSize: 14,
+    marginRight: 8,
+    width: 20,
+  },
+  detailText: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    flex: 1,
+    lineHeight: 20,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  emptyStateEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyStateSubtitle: {
     fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
+  },
+  // Peer Group Styles
+  peerGroupCard: {
+    backgroundColor: Colors.mintCream,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 5,
+    borderWidth: 2,
+    borderColor: `${Colors.primary}20`,
+  },
+  peerGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  peerGroupIconContainer: {
+    width: 60,
+    height: 60,
+    backgroundColor: Colors.primary,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  peerGroupIcon: {
+    fontSize: 28,
+  },
+  peerGroupInfo: {
+    flex: 1,
+  },
+  peerGroupTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text,
+    marginBottom: 4,
+  },
+  peerGroupSubtitle: {
+    fontSize: 14,
+    color: Colors.textSecondary,
+    lineHeight: 20,
+  },
+  peerGroupDetails: {
+    gap: 20,
+  },
+  peerGroupStats: {
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+  },
+  statDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: `${Colors.textSecondary}30`,
+    marginHorizontal: 16,
+  },
+  peerGroupFeatures: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  featureItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  featureIcon: {
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  featureText: {
+    fontSize: 12,
+    color: Colors.textSecondary,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  joinGroupButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  joinGroupButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+    marginRight: 8,
+  },
+  joinGroupArrow: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  accessDenied: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  accessDeniedEmoji: {
+    fontSize: 48,
+    marginBottom: 16,
+  },
+  accessDeniedTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: Colors.text,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  accessDeniedText: {
+    fontSize: 16,
+    color: Colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
+export default CircleOfSupportScreen;
