@@ -320,6 +320,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 16,
     backgroundColor: Colors.background,
+    marginTop:45
   },
   headerTitle: {
     fontSize: 24,
@@ -337,7 +338,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: Colors.background,
-    paddingHorizontal: 20,
+    paddingHorizontal: 9,
     marginBottom: 8,
   },
   tabButton: {
@@ -352,10 +353,10 @@ const styles = StyleSheet.create({
   tabButtonText: {
     fontSize: 16,
     fontWeight: '500',
-    color: Colors.textSecondary,
+    color: Colors.text,
   },
   activeTabButtonText: {
-    color: Colors.primary,
+    color: '#5ad',
     fontWeight: '600',
   },
   tabIndicator: {
@@ -364,7 +365,7 @@ const styles = StyleSheet.create({
     left: '25%',
     right: '25%',
     height: 3,
-    backgroundColor: Colors.primary,
+    backgroundColor: '#5ad',
     borderRadius: 2,
   },
   listContainer: {
@@ -396,7 +397,7 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 50,
     height: 50,
-    backgroundColor: Colors.primary,
+    backgroundColor:'#5ad',
     borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
@@ -426,11 +427,11 @@ const styles = StyleSheet.create({
   },
   roleText: {
     fontSize: 14,
-    color: Colors.primary,
+    color: '#5ad',
     fontWeight: '500',
   },
   connectButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#5ad',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
@@ -579,7 +580,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   joinGroupButton: {
-    backgroundColor: Colors.primary,
+    backgroundColor: '#5ad',
     borderRadius: 12,
     padding: 16,
     flexDirection: 'row',

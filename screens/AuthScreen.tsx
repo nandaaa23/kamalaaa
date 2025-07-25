@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
     marginBottom: 40
   },
   welcomeText: {
-    fontSize: 18, color: '#2D3748', textAlign: 'center', lineHeight: 28,
+    fontSize: 20, color: '#2D3748', textAlign: 'center', lineHeight: 28,
   },
   authButtons: { width: '100%', gap: 16 },
   authButton: {

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../contexts/AuthContext';
+import i18n from '../src/i18n/i18n';
 
 interface Props {
   children: React.ReactNode;
@@ -14,9 +15,9 @@ const GuestGuard: React.FC<Props> = ({ children }) => {
   if (user?.isGuest) {
     return (
       <View style={styles.lockedScreen}>
-        <Text style={styles.lockTitle}>🔒 Join Kamala to Access This Feature</Text>
+        <Text style={styles.lockTitle}>🔒{i18n.t('guest')}</Text>
         <Text style={styles.lockDescription}>
-          This content is available for registered users only.
+        {i18n.t('premiumfdesc')}
         </Text>
         <TouchableOpacity
           style={styles.joinButton}

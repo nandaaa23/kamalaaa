@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   slideText: {
-    fontSize: 14,
+    fontSize: 20,
     color: Colors.jet,
     textAlign: 'center',
     lineHeight: 28,
