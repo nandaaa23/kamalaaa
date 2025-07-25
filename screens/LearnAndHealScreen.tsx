@@ -4,6 +4,7 @@ import { Colors } from '../constants/Colors';
 import { BackButton } from '../components/BackButton';
 import { useAuth } from '../contexts/AuthContext';
 import i18n from '../src/i18n/i18n';
+import GuestGuard from '../components/GuestGuard';
 
 export const LearnAndHealScreen: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -90,6 +91,7 @@ export const LearnAndHealScreen: React.FC = () => {
   });
 
   return (
+    <GuestGuard>
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
@@ -169,6 +171,7 @@ export const LearnAndHealScreen: React.FC = () => {
         )}
       </ScrollView>
     </SafeAreaView>
+    </GuestGuard>
   );
 };
 

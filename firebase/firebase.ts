@@ -4,6 +4,7 @@ import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { getReactNativePersistence } from 'firebase/auth/react-native';
 import { getFirestore,collection } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAIxECLRumBI_6PFulAx4kcxSbYcUg-fmU",
@@ -21,8 +22,10 @@ const auth = initializeAuth(app, {
 });
 
 const db = getFirestore(app); 
+const storage = getStorage(app);
 
 export { auth, db };
+export { createUserWithEmailAndPassword, signInWithEmailAndPassword, storage };
 
 export const motherRef = collection(db, 'mothers');
 export const psychologistRef = collection(db, 'psychologists');

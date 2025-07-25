@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/Colors';
+import GuestGuard from '../components/GuestGuard';
 import { auth, db } from '../firebase/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
 import io from 'socket.io-client';
@@ -294,6 +295,7 @@ const CircleOfSupportScreen = () => {
         )}
       </View>
     </SafeAreaView>
+    </GuestGuard>
   );
 };
 

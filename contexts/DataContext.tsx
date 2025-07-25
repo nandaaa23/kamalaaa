@@ -13,8 +13,19 @@ import {
   HeartbeatMoment,
   ForumPost,
 } from '../types';
-import { useFrameworkReady } from '../hooks/useFrameworkReady';
-import { setDoc,getDoc} from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  Timestamp,
+  serverTimestamp,
+  doc,
+  updateDoc,
+} from 'firebase/firestore';
+import { db } from '../firebase/firebase';
+import { useAuth } from './AuthContext';
 
 type Podcast = {
   id: string;
@@ -29,7 +40,7 @@ interface DataContextType {
   secrets: Secret[];
   heartbeatMoments: HeartbeatMoment[];
   forumPosts: ForumPost[];
-  podcasts: Podcast[]; 
+  podcasts: Podcast[];
   addMoodEntry: (entry: Omit<MoodEntry, 'id'>) => Promise<void>;
   addReflection: (reflection: Omit<Reflection, 'id'>) => Promise<void>;
   addSecret: (secret: Omit<Secret, 'id'>) => Promise<void>;
@@ -49,12 +60,20 @@ export const useData = () => {
   return context;
 };
 
+const containsRiskWords = (text: string) => {
+  const riskWords = ['suicide', 'harm', 'kill', 'end my life', 'hurt myself'];
+  return riskWords.some((word) =>
+    text.toLowerCase().includes(word.toLowerCase())
+  );
+};
+
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [moodEntries, setMoodEntries] = useState<MoodEntry[]>([]);
   const [reflections, setReflections] = useState<Reflection[]>([]);
   const [secrets, setSecrets] = useState<Secret[]>([]);
   const [heartbeatMoments, setHeartbeatMoments] = useState<HeartbeatMoment[]>([]);
   const [forumPosts, setForumPosts] = useState<ForumPost[]>([]);
+  const { user } = useAuth();
 
   const [podcasts] = useState<Podcast[]>([
     {
@@ -71,29 +90,51 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     },
   ]);
 
+  // Firestore listeners for secrets and forum posts
   useEffect(() => {
-    loadData();
+    const secretsRef = query(collection(db, 'secrets'), orderBy('timestamp', 'desc'));
+    const unsubscribeSecrets = onSnapshot(secretsRef, (snapshot) => {
+      const loaded = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as Secret[];
+      setSecrets(loaded);
+    });
+
+    const postsRef = query(collection(db, 'forumPosts'), orderBy('timestamp', 'desc'));
+    const unsubscribePosts = onSnapshot(postsRef, (snapshot) => {
+      const loaded = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as ForumPost[];
+      setForumPosts(loaded);
+    });
+
+    return () => {
+      unsubscribeSecrets();
+      unsubscribePosts();
+    };
   }, []);
 
   const loadData = async () => {
     try {
-      const [moods, refs, secs, moments, posts] = await Promise.all([
+      const [moods, refs, moments] = await Promise.all([
         AsyncStorage.getItem('moodEntries'),
         AsyncStorage.getItem('reflections'),
-        AsyncStorage.getItem('secrets'),
         AsyncStorage.getItem('heartbeatMoments'),
-        AsyncStorage.getItem('forumPosts'),
       ]);
 
       if (moods) setMoodEntries(JSON.parse(moods));
       if (refs) setReflections(JSON.parse(refs));
-      if (secs) setSecrets(JSON.parse(secs));
       if (moments) setHeartbeatMoments(JSON.parse(moments));
-      if (posts) setForumPosts(JSON.parse(posts));
     } catch (error) {
       console.error('Error loading data:', error);
     }
   };
+
+  useEffect(() => {
+    loadData();
+  }, []);
 
   const addMoodEntry = async (entry: Omit<MoodEntry, 'id'>) => {
     const newEntry = { ...entry, id: Date.now().toString() };
@@ -110,15 +151,39 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const addSecret = async (secret: Omit<Secret, 'id'>) => {
-    const newSecret = {
-      ...secret,
-      id: Date.now().toString(),
-      replies: [],
-      timestamp: Date.now(),
-    };
-    const updatedSecrets = [...secrets, newSecret];
-    setSecrets(updatedSecrets);
-    await AsyncStorage.setItem('secrets', JSON.stringify(updatedSecrets));
+    if (containsRiskWords(secret.content)) {
+      console.warn('Risky secret detected. Not uploading.');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'secrets'), {
+        ...secret,
+        replies: [],
+        userId: user?.id,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Failed to add secret:', err);
+    }
+  };
+
+  const addForumPost = async (post: Omit<ForumPost, 'id'>) => {
+    if (containsRiskWords(post.content)) {
+      console.warn('Risky forum post detected. Not uploading.');
+      return;
+    }
+
+    try {
+      await addDoc(collection(db, 'forumPosts'), {
+        ...post,
+        replies: [],
+        userId: user?.id,
+        timestamp: serverTimestamp(),
+      });
+    } catch (err) {
+      console.error('Failed to add forum post:', err);
+    }
   };
 
   const addHeartbeatMoment = async (moment: Omit<HeartbeatMoment, 'id'>) => {
@@ -126,18 +191,6 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     const updatedMoments = [...heartbeatMoments, newMoment];
     setHeartbeatMoments(updatedMoments);
     await AsyncStorage.setItem('heartbeatMoments', JSON.stringify(updatedMoments));
-  };
-
-  const addForumPost = async (post: Omit<ForumPost, 'id'>) => {
-    const newPost = {
-      ...post,
-      id: Date.now().toString(),
-      replies: [],
-      timestamp: Date.now(),
-    };
-    const updatedPosts = [...forumPosts, newPost];
-    setForumPosts(updatedPosts);
-    await AsyncStorage.setItem('forumPosts', JSON.stringify(updatedPosts));
   };
 
   const getMoodStreak = () => {
@@ -182,7 +235,7 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
         secrets,
         heartbeatMoments,
         forumPosts,
-        podcasts, 
+        podcasts,
         addMoodEntry,
         addReflection,
         addSecret,

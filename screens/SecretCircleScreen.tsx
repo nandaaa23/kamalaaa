@@ -6,6 +6,11 @@ import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
 import { useAuth } from '../contexts/AuthContext';
 import i18n from '../src/i18n/i18n';
+import GuestGuard from '../components/GuestGuard';
+import { db } from '../firebase/firebase'; 
+import { doc, updateDoc, arrayUnion, Timestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
+
 
 export const SecretCircleScreen: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'share' | 'read' | 'my-replies'>('read');
@@ -24,8 +29,9 @@ export const SecretCircleScreen: React.FC = () => {
     addSecret({
       content: secretText,          
       allowReplies: allowReplies,
-      replies: [],                 
-      timestamp: Date.now(),        
+      replies: [],
+      timestamp: Timestamp.now(),
+      authorId: user!.id,
     });
   
     floatAnimation.value = withSequence(
@@ -37,12 +43,40 @@ export const SecretCircleScreen: React.FC = () => {
     setActiveTab('read');
   };
   
-  const handleReply = (secretId: string) => {
-    if (!replyText.trim()) return;
+  const handleReply = async (secretId: string) => {
+  if (!replyText.trim() || !user) return;
+
+  const secret = secrets.find((s) => s.id === secretId);
+  if (!secret) return;
+
+  // Prevent replying to your own secret
+  if (secret.authorId === user.id) {
+    Alert.alert("Not allowed", "You can't reply to your own secret.");
+    return;
+  }
+
+  const reply = {
+    id: Date.now().toString(),
+    content: replyText.trim(),
+    timestamp: Date.now(),
+    authorId: user.id,
+  };
+
+  try {
+    const secretRef = doc(db, 'secrets', secretId);
+    await updateDoc(secretRef, {
+      replies: arrayUnion(reply),
+    });
+
     Alert.alert(i18n.t('replySentTitle'), i18n.t('replySentMessage'));
     setReplyText('');
     setReplyingTo(null);
-  };
+  } catch (error) {
+    console.error('Failed to send reply:', error);
+    Alert.alert('Error', 'Could not send reply. Please try again.');
+  }
+};
+
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: floatAnimation.value }],
@@ -55,6 +89,7 @@ export const SecretCircleScreen: React.FC = () => {
   ];
   
   return (
+    <GuestGuard>
     <SafeAreaView style={styles.container}>
       <BackButton />
       <View style={styles.header}>
@@ -132,9 +167,11 @@ export const SecretCircleScreen: React.FC = () => {
                   <Text style={styles.secretContent}>{secret.content}</Text>
                   <View style={styles.secretFooter}>
                     <Text style={styles.secretTime}>
-                      {new Date(secret.timestamp).toLocaleDateString()}
+                      {secret.timestamp?.toDate
+                      ? new Date(secret.timestamp.toDate()).toLocaleDateString()
+                      : '...'}
                     </Text>
-                    {secret.allowReplies && (
+                    {secret.allowReplies && secret.authorId !== user?.id &&(
                       <TouchableOpacity
                         style={styles.replyButton}
                         onPress={() => setReplyingTo(secret.id)}
@@ -213,6 +250,7 @@ export const SecretCircleScreen: React.FC = () => {
         )}
       </ScrollView>
     </SafeAreaView>
+    </GuestGuard>
   );
 };
 

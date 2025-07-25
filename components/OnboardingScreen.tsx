@@ -10,12 +10,23 @@ import {
 import { Colors } from '../constants/Colors';
 import { UserProfile } from '../types';
 import i18n from '../src/i18n/i18n';
+import { setDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase/firebase';
+import { useAuth } from '../contexts/AuthContext';
+
 
 interface OnboardingScreenProps {
   onComplete: (profile: UserProfile) => void;
 }
 
 export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }) => {
+  const { user } = useAuth();
+  
+const [selectedLanguage, setSelectedLanguage] = useState('');
+const [hasPastChildbirth, setHasPastChildbirth] = useState(false);
+const [weekPostpartum, setWeekPostpartum] = useState<number | null>(null);
+const [groupPreference, setGroupPreference] = useState('');
+const [quizResponses, setQuizResponses] = useState<{ [key: string]: string }>({});
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<Partial<UserProfile>>({
     currentFeelings: [],
@@ -73,6 +84,28 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     },
   ];
 
+  const saveOnboardingData = async () => {
+  if (!user?.id) {
+    console.error('User not logged in');
+    return;
+  }
+
+  try {
+    await setDoc(doc(db, 'userOnboarding', user.id), {
+      userId: user.id,
+      ...profile,
+      weekPostpartum,
+      groupPreference,
+      createdAt: serverTimestamp(),
+    });
+
+    console.log("✅ Onboarding data saved");
+  } catch (err) {
+    console.error("❌ Failed to save onboarding:", err);
+  }
+};
+
+
   const currentStepData = steps[currentStep];
 
   const handleSelection = (value: string) => {
@@ -87,6 +120,16 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     }
   };
 
+  const handleNext = async () => {
+  if (currentStep < steps.length - 1) {
+    setCurrentStep(currentStep + 1);
+  } else {
+    await saveOnboardingData();  // ✅ Save answers to Firestore
+    onComplete(profile as UserProfile); // ✅ Continue flow
+  }
+};
+
+
   const canProceed = () => {
     const value = profile[currentStepData.key as keyof UserProfile];
     if (currentStepData.type === 'multiple') {
@@ -95,13 +138,6 @@ export const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ onComplete }
     return value && value !== '';
   };
 
-  const handleNext = () => {
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      onComplete(profile as UserProfile);
-    }
-  };
 
   const renderOptions = () => {
     if (currentStepData.type === 'text') {

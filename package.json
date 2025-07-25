@@ -70,7 +70,8 @@
     "react-native-webrtc": "^124.0.5",
     "react-native-webview": "13.13.5",
     "socket.io-client": "^4.8.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^4.1.11",
+    "expo-document-picker": "~13.1.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
