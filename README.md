@@ -4,7 +4,7 @@
 
 Kamala is a mobile-first wellness app designed to gently support Indian mothers through the postpartum period, while also offering psychologists a space to guide, listen, and connect.
 
-Built with compassion and cultural relevance at its core, Kamala offers private emotional tools, community connection, and expert access in a safe, nonjudgmental space.
+Built with compassion and cultural relevance at its core, Kamala offers private emotional tools, community connection, and expert access in a safe, non-judgmental space.
 
 ---
 
@@ -12,8 +12,11 @@ Built with compassion and cultural relevance at its core, Kamala offers private 
 
 - **React Native (Expo)**
 - **Firebase** – Authentication & Database
-- **Gemini API** – Thought reframing & emotional AI
-- **Spotify API** – Calming soundscapes & guided audio
+- **Gemini API** – Thought reframing & Chatbot
+- **Spotify API** – Curated podcasts
+- **Socket.io** - Real Time Communication
+- **Express**
+- **i18nnext** - Language translation
 
 ---
 
