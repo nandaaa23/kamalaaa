@@ -295,7 +295,7 @@ const CircleOfSupportScreen = () => {
         )}
       </View>
     </SafeAreaView>
-    </GuestGuard>
+   
   );
 };
 
