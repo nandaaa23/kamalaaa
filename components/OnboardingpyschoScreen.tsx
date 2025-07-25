@@ -3,7 +3,9 @@ import { View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, Alert 
 import RNPickerSelect from 'react-native-picker-select';
 import { Colors } from '../constants/Colors';
 import { UserProfile } from '../types';
-
+import { collection, addDoc } from 'firebase/firestore';
+import { db } from '../firebase/firebase'; 
+ 
 interface OnboardingpsychoScreenProps {
   onComplete: (profile: UserProfile) => void;
 }
@@ -19,7 +21,7 @@ export const OnboardingpsychoScreen: React.FC<OnboardingpsychoScreenProps> = ({ 
     setProfile((prev) => ({ ...prev, [key]: value }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async() => {
     console.log('🔍 Submitted profile:', profile);
 
     const requiredFields: (keyof UserProfile)[] = [
@@ -34,6 +36,16 @@ export const OnboardingpsychoScreen: React.FC<OnboardingpsychoScreenProps> = ({ 
       Alert.alert('Please fill all fields.', `Missing: ${missing.join(', ')}`);
       return;
     }
+
+    try {
+    const docRef = await addDoc(collection(db, 'psychologist_profiles'), profile);
+    console.log('✅ Profile saved with ID: ', docRef.id);
+    Alert.alert('Success', 'Profile submitted successfully!');
+    onComplete(profile as UserProfile);
+  } catch (error) {
+    console.error('❌ Error saving profile:', error);
+    Alert.alert('Error', 'Something went wrong. Please try again.');
+  }
 
     onComplete(profile as UserProfile);
   };

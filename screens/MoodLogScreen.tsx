@@ -5,6 +5,9 @@ import { MoodSelector } from '../components/MoodSelector';
 import { BackButton } from '../components/BackButton';
 import { useData } from '../contexts/DataContext';
 import i18n from '../src/i18n/i18n';
+import { db } from '../firebase/firebase'; 
+import { collection, addDoc } from 'firebase/firestore';
+
 
 export const MoodLogScreen: React.FC = () => {
   const [selectedMood, setSelectedMood] = useState<'happy' | 'down' | 'overwhelmed' | 'numb' | null>(null);
@@ -18,6 +21,17 @@ export const MoodLogScreen: React.FC = () => {
       date: today,
       mood: mood,
     });
+
+     try {
+    await addDoc(collection(db, 'mood_logs'), {
+      date: today,
+      mood: mood,
+      timestamp: new Date(),
+    });
+    console.log('✅ Mood entry saved to Firestore');
+  } catch (error) {
+    console.error('❌ Error saving mood entry:', error);
+  }
 
     Alert.alert(
       i18n.t('thankYou'),
